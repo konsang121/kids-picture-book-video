@@ -57,12 +57,14 @@ def chars_layer(name, bg):
 
 
 # Lily 每帧的动作参数：走路/跳跃/手势按周期推进 t；站立类动作轻轻上下起伏
-LILY_PERIOD = {"walk": 0.8, "jump": 1.0, "wave": 0.9, "cheer": 1.0, "flap": 0.6, "pat": 1.1, "call": 1.4, "nose": 1.0}
+LILY_PERIOD = {"walk": 0.8, "jump": 1.0, "wave": 0.9, "cheer": 1.0, "flap": 0.6, "pat": 1.1, "call": 1.4, "nose": 1.0,
+               "touchNose": 0.7, "touchEars": 0.8, "touchEyes": 2.0, "touchMouth": 1.6, "touchAll": 4.0}
 LILY_JS = """
 window.__lilyBase = %s;
 window.__lily = function (sec) {
   const P = %s, o = Object.assign({}, __lilyBase), per = P[o.action] || 1.4;
-  o.t = ((o.t || 0) + sec / per) %% 1;
+  // touchAll 是一整句的连贯动作：只走一遍，最后停在欢呼
+  o.t = o.action === "touchAll" ? Math.min(sec / per, 0.999) : ((o.t || 0) + sec / per) %% 1;
   if (!(o.action in P)) o.y = o.y - 4 * o.scale * Math.abs(Math.sin(Math.PI * sec / 0.7));
   document.getElementById("lily-slot").innerHTML = Lily.draw(o);
 };

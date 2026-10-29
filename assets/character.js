@@ -2,6 +2,7 @@
  * character.js — MV 主角 Lily（紫色星星裙小女孩）的唯一绘制模块。
  * 造型已定稿 v1.0（2026-10-29，以 角色设定图.png 为准）。之后只加新表情/动作/道具，不改已有造型参数。
  * v1.1（2026-10-29）：新增绘本用的手势动作 wave/cheer/flap/pat/call/nose，新增 filter:false 选项和 Lily.points()。
+ * v1.2（2026-10-29）：新增摸五官动作 touchNose/touchEars/touchEyes/touchMouth/touchAll（正面用），眨眼和亲亲嘴型只在这些动作里出现。
  * 这份（skill 的 assets/character.js）是唯一的主版本，绘本和 MV 都从这里取。
  *
  * 所有镜头都通过这里画角色，不要在镜头里重新画她，这样造型从头到尾一致。
@@ -16,6 +17,8 @@
  *     action: "stand",      // 动作："stand" 站 | "walk" 走 | "jump" 跳 | "hug" 拥抱 | "hold" 手持道具
  *                           //       "wave" 挥手 | "cheer" 双手举高欢呼 | "flap" 双臂扇动 | "pat" 伸手抚摸（右手伸向画面右侧）
  *                           //       "call" 手放嘴边喊 | "nose" 手指推鼻头（学小猪）
+ *                           //       （以下正面用）"touchNose" 点自己鼻子 | "touchEars" 双手摸耳朵 | "touchEyes" 双手指眼睛并眨眼
+ *                           //       "touchMouth" 手放嘴边飞吻 | "touchAll" 依次摸鼻子→耳朵→眼睛→嘴巴→欢呼（t 走完一轮）
  *     prop: null,           // 道具（action 为 hold 或 hug 时）："balloon" | "flower" | "lollipop" | "book" | "teddy"
  *     t: 0,                 // 动作进度 0~1（走路一个循环、跳跃一次起落），做动画时逐帧递增
  *     x: 0, y: 0,           // 脚底中心在画面里的位置
@@ -49,7 +52,8 @@
 
   const VIEWS = ["front", "side", "back"];
   const EXPRESSIONS = ["happy", "shy", "sad", "surprised"];
-  const ACTIONS = ["stand", "walk", "jump", "hug", "hold", "wave", "cheer", "flap", "pat", "call", "nose"];
+  const ACTIONS = ["stand", "walk", "jump", "hug", "hold", "wave", "cheer", "flap", "pat", "call", "nose",
+                   "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll"];
   const PROPS = ["balloon", "flower", "lollipop", "book", "teddy"];
 
   // ---------------- 小工具 ----------------
@@ -126,11 +130,11 @@
   }
 
   // ---------------- 表情（脸部坐标：头中心为原点） ----------------
-  function eyes(expr, xs, y, side) {
+  function eyes(expr, xs, y, side, closed) {
     let s = "";
     for (const x of xs) {
       const inner = side ? 1 : -Math.sign(x);   // 眉毛内侧的方向
-      if (expr === "shy") {
+      if (closed || expr === "shy") {
         s += `<path d="M${x - 9},${y - 1} Q${x},${y + 7} ${x + 9},${y - 1}" fill="none" stroke="${C.eye}" stroke-width="4" stroke-linecap="round"/>`;
       } else {
         const r = expr === "surprised" ? 10.5 : expr === "sad" ? 8 : 9.5;
@@ -156,7 +160,8 @@
     return s;
   }
 
-  function mouth(expr, x, y) {
+  function mouth(expr, x, y, pucker) {
+    if (pucker) return `<path d="M${x - 2},${y - 8} q8,4 0,8 q8,4 0,8" fill="none" stroke="${C.mouth}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
     switch (expr) {
       case "shy": return `<path d="M${x - 7},${y} q3.5,-3 7,0 q3.5,3 7,0" fill="none" ${stroke(3)}/>`;
       case "sad": return `<path d="M${x - 10},${y + 4} Q${x},${y - 5} ${x + 10},${y + 4}" fill="none" ${stroke(3.5)}/>`;
@@ -170,14 +175,14 @@
   }
 
   // ---------------- 头部 ----------------
-  function headFront(expr) {
+  function headFront(expr, face = {}) {
     const r = HEAD.r;
     return `<ellipse cx="0" cy="-4" rx="${r + 10}" ry="${r + 9}" fill="${C.hair}" ${stroke()}/>` +
       `<circle cx="-70" cy="16" r="33" fill="${C.hair}" ${stroke()}/><circle cx="70" cy="16" r="33" fill="${C.hair}" ${stroke()}/>` +
       `<circle cx="0" cy="8" r="${r}" fill="${C.skin}" ${stroke()}/>` +
       `<path d="M-57,2 Q-52,-52 0,-58 Q52,-52 57,2 Q44,-18 24,-12 Q12,-28 0,-16 Q-12,-28 -24,-12 Q-44,-18 -57,2Z" fill="${C.hair}" ${stroke()}/>` +
       bow(-58, -12) + bow(58, -12) +
-      eyes(expr, [-21, 21], 10, false) + cheeks(expr, [-35, 35], 28) + mouth(expr, 0, 36) +
+      eyes(expr, [-21, 21], 10, false, face.closed) + cheeks(expr, [-35, 35], 28) + mouth(expr, 0, 36, face.pucker) +
       (expr === "sad" ? tear(-31, 22) : "");
   }
 
@@ -315,6 +320,8 @@
       p.targetR = { x: 46, y: -192 }; p.armsLast = true;
     } else if (action === "nose") {
       p.targetR = { x: 6, y: -208 + 2 * ph }; p.armsLast = true;
+    } else if (action.startsWith("touch")) {
+      Object.assign(p, touch(action, t)); p.armsLast = true;
     } else if (action === "hold") {
       if (prop === "balloon") p.armR = view === "side" ? [0.7, 0.3] : [0.55, 0.1];
       else if (prop === "book") p.armR = view === "side" ? [0.45, 1.0] : [0.35, -0.75];
@@ -322,6 +329,41 @@
       p.grip = "right";
     }
     return p;
+  }
+
+  // ---------------- 摸五官（身体坐标：头中心 0,-232；眼 ±21,-222；嘴 0,-196） ----------------
+  const REST_L = limb({ x: -SHOULDER.x, y: SHOULDER.y }, 0.18, -0.08, UPPER, FORE, -1).end;
+  const REST_R = limb(SHOULDER, 0.18, -0.08, UPPER, FORE, 1).end;
+  const lerp = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+  const ease = (k) => k * k * (3 - 2 * k);
+
+  /** 每个摸五官动作在进度 t 时双手的目标位置和脸部变化。 */
+  function touchKey(action, t) {
+    const ph = Math.sin(2 * Math.PI * t), up = 0.5 + 0.5 * ph;
+    switch (action) {
+      case "touchNose":   // 食指点鼻头：来回轻点
+        return { L: REST_L, R: lerp({ x: 24, y: -196 }, { x: 7, y: -208 }, up) };
+      case "touchEars":   // 双手捂在头两侧，交替上下扭动
+        return { L: { x: -62, y: -222 + 5 * ph }, R: { x: 62, y: -222 - 5 * ph } };
+      case "touchEyes":   // 手指在眼角外侧，眨两次眼
+        return { L: { x: -42, y: -226 }, R: { x: 42, y: -226 }, closed: Math.sin(4 * Math.PI * t) > 0.55 };
+      case "touchMouth":  // 手放嘴边再向外送出飞吻
+        return { L: REST_L, R: lerp({ x: 6, y: -190 }, { x: 62, y: -206 }, up), pucker: true };
+      case "cheer":
+        return { L: { x: -64, y: -266 }, R: { x: 64, y: -266 } };
+    }
+  }
+
+  function touch(action, t) {
+    let k;
+    if (action === "touchAll") {
+      const seq = ["touchNose", "touchEars", "touchEyes", "touchMouth", "cheer"];
+      const u = (((t % 1) + 1) % 1) * seq.length, i = Math.floor(u), local = u - i;
+      const cur = touchKey(seq[i], local * 0.999), prev = touchKey(seq[(i + seq.length - 1) % seq.length], 0.999);
+      const m = ease(Math.min(local / 0.3, 1));   // 每段前 30% 从上一个动作滑过去
+      k = { L: lerp(prev.L, cur.L, m), R: lerp(prev.R, cur.R, m), closed: m === 1 && cur.closed, pucker: cur.pucker };
+    } else k = touchKey(action, t);
+    return { targetL: k.L, targetR: k.R, face: { closed: !!k.closed, pucker: !!k.pucker } };
   }
 
   // ---------------- 组装 ----------------
@@ -351,7 +393,7 @@
 
     // 正面 / 背面
     const sL = { x: -SHOULDER.x, y: SHOULDER.y }, sR = { x: SHOULDER.x, y: SHOULDER.y };
-    const armL = limb(sL, P.armL[0], P.armL[1], UPPER, FORE, -1);
+    const armL = P.targetL ? ik(sL, P.targetL, UPPER, FORE) : limb(sL, P.armL[0], P.armL[1], UPPER, FORE, -1);
     const armR = P.targetR ? ik(sR, P.targetR, UPPER, FORE) : limb(sR, P.armR[0], P.armR[1], UPPER, FORE, 1);
     lastPts = { handL: armL.end, handR: armR.end };
     const tuck = P.bend * 22;
@@ -379,7 +421,7 @@
       arms += armPath(armR) + drawProp(heldProp, armR.end, view) + hand(armR.end, !!heldProp);
       arms += sleeve(-38, -160) + sleeve(38, -160);
     }
-    const head = `<g transform="translate(${HEAD.x},${HEAD.y})">${isBack ? headBack() : headFront(expression)}</g>`;
+    const head = `<g transform="translate(${HEAD.x},${HEAD.y})">${isBack ? headBack() : headFront(expression, P.face)}</g>`;
     const content = P.armsLast ? back + mid + head + arms : back + mid + arms + head;
     return wrap(o, lift, content, P);
   }
