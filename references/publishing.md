@@ -1,0 +1,56 @@
+# 发布文案模板
+
+写得简单易懂：家长一眼能看出是什么、适合几岁、能学到哪些词。把 `{}` 里的内容换成本期内容。
+
+## YouTube（16:9 横版）
+
+**标题**（给 3 个备选，60 个字符以内，英文，带 1–2 个 emoji）：
+- `{关键短语}! {emoji} {主题} English Story for Kids | {词1}, {词2} & {词3}`
+- `{第一句文案} {emoji} {主题} Picture Book for Toddlers`
+- `{主题} English for Kids {emoji} Learn {词1}, {词2}, {词3} | 20s Story`
+
+**说明**：
+```
+{第一句文案} {emoji}
+Join Lily and meet {角色们}!
+
+A short, gentle English picture book for kids ages 3–6. Perfect for listening practice and repeating along.
+
+📖 Story:
+{5 句文案，每句一行}
+
+🔤 Words to learn: {4–5 个关键词，用 · 分隔}
+💡 Tip: Watch it a few times and say the words together with your child!
+
+🎵 Music: original composition, created for this channel.
+
+#EnglishForKids #KidsStory #Toddler #PictureBook #LearnEnglish #{主题标签}
+```
+
+提醒用户：上传时在“观众”设置里选 **“是，内容是面向儿童的”**（Made for Kids）。
+
+## 抖音 / 视频号 / 小红书（3:4 竖版）
+
+**标题**（3 个备选；抖音控制在 15 个字以内，小红书可以多放 emoji）：
+- `{主题}英语绘本{emoji} {第一句的中文意思}`
+- `3-6岁磨耳朵｜20秒学会{主题}英语单词{emoji}`
+- `{主题}到啦！跟着Lily学 {词1}、{词2}、{词3} {emoji}`
+
+**说明**：
+```
+{第一句的中文意思，口语化}
+跟着小女孩 Lily {做什么}，认识{角色们}！
+
+📖 今日英文：
+{5 句文案}
+
+🔤 重点单词：{词1 中文}｜{词2 中文}｜{词3 中文}
+💡 每天循环播放3遍，让宝宝跟着说 “{最好玩的拟声词}” 效果更好～
+
+#英语启蒙 #磨耳朵 #英语绘本 #幼儿英语 #亲子英语 #{主题}
+```
+
+## 其他建议
+
+- **封面**：截最后一句的画面（所有角色一起出场），加上大字标题
+- **发布时间**：节日主题提前 2–3 天发布

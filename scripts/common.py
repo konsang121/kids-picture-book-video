@@ -1,0 +1,175 @@
+"""各步骤共用：项目目录、story.py 配置、DeepSeek 调用、蜡笔滤镜、Chrome 导出。
+
+每个脚本都用 --project <目录> 指定项目（默认当前目录），竖版加 --3x4。
+项目目录里必须有 story.py（模板见 skill 的 assets/story_template.py）。
+"""
+import importlib.util
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import urllib.request
+from pathlib import Path
+
+SKILL = Path(__file__).resolve().parent.parent
+# key 文件的位置写在 skill 根目录的 .deepseek_key_file 里（只有一行路径，不会上传到 GitHub）
+KEY_POINTER = SKILL / ".deepseek_key_file"
+API_URL = "https://api.deepseek.com/chat/completions"
+MODEL = "deepseek-flash"
+BROWSER = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+VALUE_FLAGS = ("--project", "--voice", "--rate", "--music")
+
+
+def arg_value(name, default=None):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+
+
+def positional():
+    """命令行里除了 --开关 和它们的取值以外的参数（场景编号、bg、0 等）。"""
+    out, skip = [], False
+    for a in sys.argv[1:]:
+        if skip:
+            skip = False
+        elif a in VALUE_FLAGS:
+            skip = True
+        elif not a.startswith("--"):
+            out.append(a)
+    return out
+
+
+ROOT = Path(arg_value("--project", os.getcwd())).resolve()
+PORTRAIT = "--3x4" in sys.argv
+FMT = "3x4" if PORTRAIT else "16x9"
+W, H = (1200, 1600) if PORTRAIT else (1600, 900)
+SRC = ROOT / "3x4" if PORTRAIT else ROOT     # 当前画幅的图片目录
+
+
+def load_story():
+    f = ROOT / "story.py"
+    if not f.exists():
+        raise SystemExit(f"{ROOT} 里没有 story.py，先从 {SKILL / 'assets' / 'story_template.py'} 复制一份再改")
+    spec = importlib.util.spec_from_file_location("story", f)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+STORY = load_story()
+SCENES = STORY.SCENES
+
+# 小女孩 Lily 的固定设定（颜色都给 hex，保证每张一致）
+LILY = """Lily, a cute 5-year-old girl, drawn in a simple picture-book style:
+- round peach face (#FFD9B8), pink rosy cheeks (#FF9AA2), big round sparkling dark-brown eyes (fully round, not half-closed) with white highlights, small happy smile
+- dark brown hair (#5A3A22) in two big puffy pigtails, one on each side, each tied with an orange ribbon bow (#FF8C1A) at the base of the pigtail, well away from her eyes
+- light purple A-line dress (#C9A7F2) decorated with small yellow stars (#FFD93D)
+- orange and white horizontal striped tights (#FF8C1A / #FFFFFF), ALWAYS clearly visible on both legs between the dress hem and the shoes
+- black round-toe shoes (#2B2B2B)
+- proportions: big head (about 1/3 of body height), short chubby arms and legs"""
+LILY_EXTRA = getattr(STORY, "LILY_EXTRA", "")   # 本期额外的服装/道具，例如女巫帽、雨衣
+
+STYLE = """Style rules:
+- children's crayon picture book, bright cheerful colors, fresh and lively, eye-level view
+- thick soft rounded shapes, dark outlines (#4A3B33, stroke-width 5-7, stroke-linecap round, stroke-linejoin round)
+- everything cute and friendly, nothing scary, suitable for YouTube Kids, ages 3-6
+- add a few loose crayon hatching lines (thin strokes, opacity 0.3-0.5) on walls, ground and clothes for a hand-drawn feel;
+  NEVER put any lines or streaks in the sky (they look like rain) - the sky is only the smooth gradient plus 2-3 soft clouds"""
+
+FORMAT = """Output format (strict):
+- Output ONE complete SVG: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}"> ... </svg>
+- No <text> elements, no words or letters anywhere, no <image>, no external references, no <filter>, no <script>.
+- Gradients in <defs> are allowed.
+- Only output the SVG code, nothing else."""
+
+CRAYON_DEFS = """
+<filter id="crayon" x="-2%" y="-2%" width="104%" height="104%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" result="warp"/>
+  <feDisplacementMap in="SourceGraphic" in2="warp" scale="6" xChannelSelector="R" yChannelSelector="G" result="wobbly"/>
+  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="8" result="grain"/>
+  <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -3.2 2.75" result="grainA"/>
+  <feComposite in="wobbly" in2="grainA" operator="in"/>
+</filter>
+<filter id="paper">
+  <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" seed="2"/>
+  <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.35  0 0 0 0.12 0"/>
+</filter>"""
+
+
+def lily_description():
+    return LILY + ("\n- " + LILY_EXTRA if LILY_EXTRA else "")
+
+
+def lily_reference():
+    """项目里的 Lily 参考图；没有就用 skill 自带的那版（万圣节第一期定稿的形象）。"""
+    f = ROOT / "_lily_raw.svg"
+    if not f.exists():
+        shutil.copy(SKILL / "assets" / "lily.svg", f)
+    return f.read_text(encoding="utf-8")
+
+
+def api_key():
+    """依次找：环境变量 DEEPSEEK_API_KEY → 环境变量 DEEPSEEK_KEY_FILE → .deepseek_key_file 里写的路径。
+    key 文件里可以只有 key，也可以是 `Key：sk-...` 这样的格式。"""
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        return os.environ["DEEPSEEK_API_KEY"]
+    path = os.environ.get("DEEPSEEK_KEY_FILE") or (KEY_POINTER.read_text(encoding="utf-8").strip() if KEY_POINTER.exists() else "")
+    if not path or not Path(path).exists():
+        raise SystemExit("没找到 DeepSeek key：设置环境变量 DEEPSEEK_API_KEY，或在 skill 根目录建 .deepseek_key_file 写上 key 文件的路径")
+    text = Path(path).read_text(encoding="utf-8")
+    m = re.search(r"sk-[A-Za-z0-9]+", text)
+    if not m:
+        raise SystemExit(f"{path} 里没找到 sk- 开头的 key")
+    return m.group(0)
+
+
+def ask(system, user):
+    body = json.dumps({
+        "model": MODEL,
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        "max_tokens": 60000,
+    }).encode()
+    req = urllib.request.Request(API_URL, body, {"Authorization": f"Bearer {api_key()}", "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=900) as r:
+        content = json.load(r)["choices"][0]["message"]["content"]
+    m = re.search(r"<svg[\s\S]*</svg>", content)
+    if not m:
+        raise RuntimeError("模型没有返回 SVG：\n" + content[:500])
+    return m.group(0)
+
+
+def strip_svg(svg):
+    return re.sub(r"^<svg[^>]*>|</svg>$", "", svg.strip())
+
+
+def unhide(svg, ids):
+    """模型有时会自己给可切换的分组加 display:none，去掉它，显示与否由场景的 hide 决定。"""
+    for i in ids:
+        svg = re.sub(rf'(id="{re.escape(i)}")\s+style="[^"]*"', r"\1", svg)
+    return svg
+
+
+def hide_ids():
+    return sorted({i for s in SCENES for i in s.get("hide", [])})
+
+
+def crayonize(svg, w, h):
+    """套上纸张底色和蜡笔滤镜。"""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}">'
+            f"<defs>{CRAYON_DEFS}</defs>"
+            f'<rect width="{w}" height="{h}" fill="#FFF8EC"/>'
+            f'<g filter="url(#crayon)">{strip_svg(svg)}</g>'
+            f'<rect width="{w}" height="{h}" filter="url(#paper)"/></svg>')
+
+
+def render(name, svg, w, h, out=None):
+    out = out or SRC
+    out.mkdir(parents=True, exist_ok=True)
+    (out / f"{name}.svg").write_text(svg, encoding="utf-8")
+    html = out / f"_{name}.html"
+    html.write_text(f'<html><body style="margin:0;overflow:hidden">{svg}</body></html>', encoding="utf-8")
+    png = out / f"{name}.png"
+    subprocess.run([BROWSER, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={w},{h}",
+                    f"--screenshot={png}", html.as_uri()], check=True, capture_output=True, timeout=120)
+    html.unlink()
+    print("已生成", png)

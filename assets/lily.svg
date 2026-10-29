@@ -1,0 +1,402 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs>
+    <!-- Pumpkin Gradient -->
+    <radialGradient id="pumpkinGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFA533"/>
+      <stop offset="100%" stop-color="#FF8C1A"/>
+    </radialGradient>
+    
+    <!-- Hat Gradient -->
+    <linearGradient id="hatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9F6DE8"/>
+      <stop offset="100%" stop-color="#8E5BD6"/>
+    </linearGradient>
+
+    <!-- Star Symbol -->
+    <g id="star">
+      <path d="M 0,-12 L 3.5,-3.5 L 12,-3.5 L 5,2.5 L 7,11 L 0,6 L -7,11 L -5,2.5 L -12,-3.5 L -3.5,-3.5 Z" fill="#FFD93D" stroke="#4A3B33" stroke-width="2.5" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Crayon Hatching Pattern -->
+    <g id="hatching">
+      <path d="M 0 0 L 20 20 M 10 -5 L 25 15 M -5 10 L 15 30" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+    </g>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="#FDFBF7" />
+
+  <!-- Background Crayon Doodles (Stars, Swirls, Dots) -->
+  <g opacity="0.4" stroke="#E5D9C5" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 100 200 Q 120 180 140 200 Q 160 220 140 240" />
+    <path d="M 1050 150 Q 1080 130 1100 160 Q 1120 190 1090 200" />
+    <circle cx="200" cy="750" r="15" />
+    <circle cx="1000" cy="700" r="25" />
+    <circle cx="150" cy="450" r="8" />
+    <circle cx="1050" cy="400" r="10" />
+    <path d="M 850 100 L 870 120 M 860 90 L 880 110" />
+    <path d="M 300 850 L 320 830 M 310 860 L 330 840" />
+    <path d="M 800 800 Q 820 780 840 800 Q 860 820 840 840" />
+    <path d="M 400 150 Q 420 130 440 150 Q 460 170 440 190" />
+  </g>
+
+  <!-- =============================== -->
+  <!-- FRONT VIEW (CENTER, LARGEST)   -->
+  <!-- =============================== -->
+  <g id="front-view">
+    <!-- Shadow -->
+    <ellipse cx="600" cy="570" rx="120" ry="25" fill="#EFE8DD" opacity="0.8" />
+
+    <!-- Legs -->
+    <!-- Left Leg -->
+    <rect x="555" y="460" width="30" height="90" rx="15" fill="#FFFFFF" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="557" y="480" width="26" height="14" fill="#FF8C1A"/>
+    <rect x="557" y="512" width="26" height="14" fill="#FF8C1A"/>
+    
+    <!-- Right Leg -->
+    <rect x="615" y="460" width="30" height="90" rx="15" fill="#FFFFFF" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="617" y="480" width="26" height="14" fill="#FF8C1A"/>
+    <rect x="617" y="512" width="26" height="14" fill="#FF8C1A"/>
+
+    <!-- Shoes -->
+    <!-- Left Shoe -->
+    <ellipse cx="570" cy="555" rx="38" ry="22" fill="#2B2B2B" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="560" cy="548" rx="12" ry="6" fill="#555555" opacity="0.6"/>
+    <!-- Right Shoe -->
+    <ellipse cx="630" cy="555" rx="38" ry="22" fill="#2B2B2B" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="620" cy="548" rx="12" ry="6" fill="#555555" opacity="0.6"/>
+
+    <!-- Dress -->
+    <path d="M 545 290 L 655 290 L 695 470 L 505 470 Z" fill="#C9A7F2" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- Crayon Hatching on Dress -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M 530 380 L 550 360 M 540 420 L 560 400 M 640 380 L 660 360 M 650 420 L 670 400" />
+    </g>
+
+    <!-- Stars on Dress -->
+    <g transform="translate(580, 330) scale(0.8)"><use href="#star"/></g>
+    <g transform="translate(630, 390) scale(0.9)"><use href="#star"/></g>
+    <g transform="translate(545, 420) scale(0.7)"><use href="#star"/></g>
+    <g transform="translate(655, 440) scale(0.8)"><use href="#star"/></g>
+    <g transform="translate(595, 400) scale(0.6)"><use href="#star"/></g>
+
+    <!-- Neck -->
+    <rect x="580" y="275" width="40" height="20" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Arms -->
+    <!-- Left Sleeve -->
+    <path d="M 545 290 Q 505 310 515 350" stroke="#C9A7F2" stroke-width="35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 545 290 Q 505 310 515 350" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Right Sleeve -->
+    <path d="M 655 290 Q 695 310 685 350" stroke="#C9A7F2" stroke-width="35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 655 290 Q 695 310 685 350" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Left Arm Skin -->
+    <path d="M 515 340 Q 505 380 515 410" stroke="#FFD9B8" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 515 340 Q 505 380 515 410" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Right Arm Skin -->
+    <path d="M 685 340 Q 695 380 685 410" stroke="#FFD9B8" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 685 340 Q 695 380 685 410" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Left Hand -->
+    <circle cx="515" cy="410" r="14" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6"/>
+    
+    <!-- Pumpkin Bucket (Behind Right Hand) -->
+    <g id="pumpkin-front">
+      <!-- Handle -->
+      <path d="M 685 460 C 685 400 765 400 765 460" stroke="#2B2B2B" stroke-width="8" fill="none" stroke-linecap="round"/>
+      
+      <!-- Body -->
+      <ellipse cx="725" cy="480" rx="48" ry="42" fill="url(#pumpkinGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <!-- Segments -->
+      <path d="M 725 438 Q 735 480 725 522" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 698 442 Q 710 480 698 518" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 752 442 Q 740 480 752 518" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+      
+      <!-- Stem -->
+      <path d="M 725 438 Q 720 415 732 410" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M 730 412 Q 738 405 740 412" stroke="#6B8E23" stroke-width="4" fill="none" stroke-linecap="round"/>
+      
+      <!-- Carved Face -->
+      <polygon points="705,478 720,478 712,465" fill="#2B2B2B"/>
+      <polygon points="745,478 730,478 738,465" fill="#2B2B2B"/>
+      <path d="M 705 490 Q 725 510 745 490" stroke="#2B2B2B" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Right Hand (Over Handle) -->
+    <circle cx="685" cy="410" r="14" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6"/>
+
+    <!-- Head -->
+    <!-- Hair Back -->
+    <ellipse cx="600" cy="200" rx="85" ry="90" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Pigtails -->
+    <!-- Left Pigtail -->
+    <ellipse cx="490" cy="240" rx="45" ry="55" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 480 200 Q 470 240 480 280" stroke="#4A3B33" stroke-width="4" fill="none" opacity="0.4"/>
+    <!-- Right Pigtail -->
+    <ellipse cx="710" cy="240" rx="45" ry="55" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 720 200 Q 730 240 720 280" stroke="#4A3B33" stroke-width="4" fill="none" opacity="0.4"/>
+
+    <!-- Ribbons -->
+    <!-- Left Ribbon -->
+    <polygon points="520,220 490,195 490,245" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="520" cy="220" r="10" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6"/>
+    <!-- Right Ribbon -->
+    <polygon points="680,220 710,195 710,245" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="680" cy="220" r="10" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6"/>
+
+    <!-- Face -->
+    <ellipse cx="600" cy="225" rx="70" ry="80" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Cheeks -->
+    <circle cx="545" cy="250" r="14" fill="#FF9AA2" opacity="0.6"/>
+    <circle cx="655" cy="250" r="14" fill="#FF9AA2" opacity="0.6"/>
+
+    <!-- Eyes -->
+    <!-- Left Eye -->
+    <circle cx="570" cy="220" r="16" fill="#4A3B33"/>
+    <circle cx="565" cy="215" r="6" fill="#FFFFFF"/>
+    <circle cx="575" cy="225" r="3" fill="#FFFFFF"/>
+    <path d="M 550 210 Q 555 200 570 205" stroke="#4A3B33" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Right Eye -->
+    <circle cx="630" cy="220" r="16" fill="#4A3B33"/>
+    <circle cx="625" cy="215" r="6" fill="#FFFFFF"/>
+    <circle cx="635" cy="225" r="3" fill="#FFFFFF"/>
+    <path d="M 650 210 Q 645 200 630 205" stroke="#4A3B33" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Smile -->
+    <path d="M 585 255 Q 600 270 615 255" stroke="#4A3B33" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+    <!-- Hat -->
+    <!-- Hat Back/Brim -->
+    <ellipse cx="600" cy="150" rx="85" ry="18" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Hat Cone -->
+    <path d="M 540 150 Q 580 40 650 70 L 660 150 Z" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Hat Band -->
+    <path d="M 545 140 Q 600 160 655 140 L 660 150 Q 600 170 540 150 Z" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Hat Hatching -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M 570 120 L 590 100 M 600 130 L 620 110 M 580 140 L 600 120" />
+    </g>
+  </g>
+
+  <!-- =============================== -->
+  <!-- SIDE VIEW (LEFT, SMALLER)      -->
+  <!-- =============================== -->
+  <g id="side-view" transform="translate(280, 450) scale(0.75)">
+    <!-- Shadow -->
+    <ellipse cx="0" cy="145" rx="100" ry="20" fill="#EFE8DD" opacity="0.8" />
+
+    <!-- Leg -->
+    <rect x="-15" y="10" width="30" height="90" rx="15" fill="#FFFFFF" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="-13" y="30" width="26" height="14" fill="#FF8C1A"/>
+    <rect x="-13" y="62" width="26" height="14" fill="#FF8C1A"/>
+
+    <!-- Shoe -->
+    <ellipse cx="5" cy="110" rx="38" ry="22" fill="#2B2B2B" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="-5" cy="103" rx="12" ry="6" fill="#555555" opacity="0.6"/>
+
+    <!-- Dress -->
+    <path d="M -35 -160 L 45 -160 L 65 10 L -65 10 Z" fill="#C9A7F2" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- Stars on Dress -->
+    <g transform="translate(-10, -80) scale(0.8)"><use href="#star"/></g>
+    <g transform="translate(25, -30) scale(0.7)"><use href="#star"/></g>
+    
+    <!-- Crayon Hatching -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M -20 -20 L 0 -40 M -10 20 L 10 0" />
+    </g>
+
+    <!-- Neck -->
+    <rect x="-20" y="-175" width="40" height="20" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Arm -->
+    <path d="M 20 -150 Q 60 -130 60 -90" stroke="#C9A7F2" stroke-width="35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 20 -150 Q 60 -130 60 -90" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <path d="M 60 -100 Q 60 -60 50 -45" stroke="#FFD9B8" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 60 -100 Q 60 -60 50 -45" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Head -->
+    <!-- Hair -->
+    <ellipse cx="-10" cy="-250" rx="85" ry="90" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Pigtail -->
+    <ellipse cx="-75" cy="-240" rx="45" ry="55" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -85 -200 Q -95 -240 -85 -280" stroke="#4A3B33" stroke-width="4" fill="none" opacity="0.4"/>
+    
+    <!-- Ribbon -->
+    <polygon points="-50,-230 -80,-255 -80,-205" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="-50" cy="-230" r="10" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6"/>
+
+    <!-- Face Profile -->
+    <ellipse cx="15" cy="-230" rx="70" ry="80" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Nose -->
+    <path d="M 75 -235 Q 85 -235 85 -225" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round"/>
+    
+    <!-- Cheek -->
+    <circle cx="50" cy="-205" r="12" fill="#FF9AA2" opacity="0.6"/>
+
+    <!-- Eye -->
+    <circle cx="40" cy="-235" r="14" fill="#4A3B33"/>
+    <circle cx="35" cy="-240" r="5" fill="#FFFFFF"/>
+    <circle cx="45" cy="-230" r="3" fill="#FFFFFF"/>
+    <path d="M 25 -245 Q 30 -255 45 -250" stroke="#4A3B33" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Smile -->
+    <path d="M 60 -210 Q 70 -205 75 -210" stroke="#4A3B33" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+    <!-- Hat -->
+    <ellipse cx="5" cy="-320" rx="85" ry="18" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -55 -320 Q -15 -430 45 -390 L 65 -320 Z" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M -50 -310 Q 5 -330 60 -310 L 65 -320 Q 5 -340 -55 -320 Z" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- Hat Hatching -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M 0 -380 L 20 -360 M 10 -390 L 30 -370" />
+    </g>
+
+    <!-- Pumpkin Bucket -->
+    <!-- Handle -->
+    <path d="M 50 -60 C 50 -130 130 -130 130 -60" stroke="#2B2B2B" stroke-width="8" fill="none" stroke-linecap="round"/>
+    
+    <!-- Body -->
+    <ellipse cx="90" cy="-30" rx="45" ry="40" fill="url(#pumpkinGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Segments -->
+    <path d="M 90 -70 Q 100 -30 90 10" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 65 -65 Q 75 -30 65 5" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 115 -65 Q 105 -30 115 5" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    
+    <!-- Stem -->
+    <path d="M 90 -70 Q 85 -90 95 -95" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 93 -93 Q 100 -100 102 -93" stroke="#6B8E23" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Carved Face -->
+    <polygon points="70,-28 85,-28 78,-40" fill="#2B2B2B"/>
+    <polygon points="110,-28 95,-28 102,-40" fill="#2B2B2B"/>
+    <path d="M 70 -18 Q 90 2 110 -18" stroke="#2B2B2B" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Hand (Over Handle) -->
+    <circle cx="50" cy="-45" r="14" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6"/>
+  </g>
+
+  <!-- =============================== -->
+  <!-- BACK VIEW (RIGHT, SMALLER)     -->
+  <!-- =============================== -->
+  <g id="back-view" transform="translate(920, 450) scale(0.75)">
+    <!-- Shadow -->
+    <ellipse cx="0" cy="145" rx="100" ry="20" fill="#EFE8DD" opacity="0.8" />
+
+    <!-- Legs -->
+    <!-- Left Leg -->
+    <rect x="-25" y="10" width="30" height="90" rx="15" fill="#FFFFFF" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="-23" y="30" width="26" height="14" fill="#FF8C1A"/>
+    <rect x="-23" y="62" width="26" height="14" fill="#FF8C1A"/>
+    
+    <!-- Right Leg -->
+    <rect x="-5" y="10" width="30" height="90" rx="15" fill="#FFFFFF" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="-3" y="30" width="26" height="14" fill="#FF8C1A"/>
+    <rect x="-3" y="62" width="26" height="14" fill="#FF8C1A"/>
+
+    <!-- Shoes -->
+    <!-- Left Shoe -->
+    <ellipse cx="-10" cy="110" rx="38" ry="22" fill="#2B2B2B" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="-20" cy="103" rx="12" ry="6" fill="#555555" opacity="0.6"/>
+    <!-- Right Shoe -->
+    <ellipse cx="10" cy="110" rx="38" ry="22" fill="#2B2B2B" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="0" cy="103" rx="12" ry="6" fill="#555555" opacity="0.6"/>
+
+    <!-- Dress -->
+    <path d="M -45 -160 L 45 -160 L 75 10 L -75 10 Z" fill="#C9A7F2" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- Stars on Dress -->
+    <g transform="translate(0, -80) scale(0.8)"><use href="#star"/></g>
+    <g transform="translate(-25, -30) scale(0.7)"><use href="#star"/></g>
+    <g transform="translate(30, -40) scale(0.6)"><use href="#star"/></g>
+    
+    <!-- Crayon Hatching -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M -30 -10 L -10 -30 M -20 20 L 0 0 M 20 -10 L 40 -30" />
+    </g>
+
+    <!-- Arms -->
+    <!-- Left Arm -->
+    <path d="M -45 -150 Q -75 -120 -70 -80" stroke="#C9A7F2" stroke-width="35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -45 -150 Q -75 -120 -70 -80" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <path d="M -70 -90 Q -70 -50 -60 -35" stroke="#FFD9B8" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -70 -90 Q -70 -50 -60 -35" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <circle cx="-60" cy="-35" r="14" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6"/>
+
+    <!-- Right Arm -->
+    <path d="M 45 -150 Q 75 -120 70 -80" stroke="#C9A7F2" stroke-width="35" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 45 -150 Q 75 -120 70 -80" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <path d="M 70 -90 Q 70 -50 60 -35" stroke="#FFD9B8" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 70 -90 Q 70 -50 60 -35" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Head -->
+    <!-- Hair Back -->
+    <ellipse cx="0" cy="-230" rx="85" ry="90" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Pigtails -->
+    <!-- Left Pigtail -->
+    <ellipse cx="-80" cy="-240" rx="45" ry="55" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -90 -200 Q -100 -240 -90 -280" stroke="#4A3B33" stroke-width="4" fill="none" opacity="0.4"/>
+    <!-- Right Pigtail -->
+    <ellipse cx="80" cy="-240" rx="45" ry="55" fill="#5A3A22" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 90 -200 Q 100 -240 90 -280" stroke="#4A3B33" stroke-width="4" fill="none" opacity="0.4"/>
+
+    <!-- Ribbons -->
+    <!-- Left Ribbon -->
+    <polygon points="-80,-230 -110,-255 -110,-205" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="-80" cy="-230" r="10" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6"/>
+    <!-- Right Ribbon -->
+    <polygon points="80,-230 110,-255 110,-205" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="80" cy="-230" r="10" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6"/>
+
+    <!-- Hat -->
+    <ellipse cx="0" cy="-320" rx="85" ry="18" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -60 -320 Q 0 -430 60 -320 Z" fill="url(#hatGrad)" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M -55 -310 Q 0 -330 55 -310 L 60 -320 Q 0 -340 -60 -320 Z" fill="#FF8C1A" stroke="#4A3B33" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- Hat Hatching -->
+    <g opacity="0.4" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M -20 -380 L 0 -360 M -10 -390 L 10 -370 M 0 -370 L 20 -350" />
+    </g>
+
+    <!-- Pumpkin Bucket (Held in Right Hand) -->
+    <!-- Handle -->
+    <path d="M 60 -50 C 60 -120 140 -120 140 -50" stroke="#2B2B2B" stroke-width="8" fill="none" stroke-linecap="round"/>
+    
+    <!-- Body -->
+    <ellipse cx="100" cy="-20" rx="45" ry="40" fill="url(#pumpkinGrad)" stroke="#4A3B33" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Segments -->
+    <path d="M 100 -60 Q 110 -20 100 20" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 75 -55 Q 85 -20 75 15" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 125 -55 Q 115 -20 125 15" stroke="#E67A00" stroke-width="5" fill="none" stroke-linecap="round"/>
+    
+    <!-- Stem -->
+    <path d="M 100 -60 Q 95 -80 105 -85" stroke="#4A3B33" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 103 -83 Q 110 -90 112 -83" stroke="#6B8E23" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+    <!-- Carved Face -->
+    <polygon points="80,-18 95,-18 88,-30" fill="#2B2B2B"/>
+    <polygon points="120,-18 105,-18 112,-30" fill="#2B2B2B"/>
+    <path d="M 80 -8 Q 100 12 120 -8" stroke="#2B2B2B" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Right Hand (Over Handle) -->
+    <circle cx="60" cy="-35" r="14" fill="#FFD9B8" stroke="#4A3B33" stroke-width="6"/>
+  </g>
+
+</svg>
