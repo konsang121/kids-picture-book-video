@@ -1,4 +1,7 @@
-"""第 3 步 动画：镜头推拉摇移（story.py 里的 camera）+ 角色小动作（DeepSeek 加 CSS 动画），逐帧导出 5 秒 MP4。
+"""第 3 步 动画：镜头推拉摇移（story.py 里的 camera）+ 角色小动作（DeepSeek 加 CSS 动画），逐帧导出 MP4。
+
+每段 CLIP 秒（默认 4 秒）；如果 story.py 里有 TEASER，还会额外导出 00_teaser.mp4：
+用最后一幕（所有角色同框）从近景快速拉开成全景，作为视频开头 2 秒的预告钩子。
 
 用法：
     python animate.py --project ...            # 16:9 → 动画/
@@ -20,7 +23,7 @@ import common as c
 
 REDO = "--redo" in sys.argv
 OUT = c.SRC / "动画"
-FPS, SECONDS = 25, 5
+FPS = 25
 
 ANIM_RULES = """You will receive the CHARACTER LAYER of a picture-book page as SVG. Add gentle, cute CSS animation to it.
 
@@ -35,7 +38,7 @@ Rules (strict):
 - Every animated group must have `transform-box: fill-box;` and a correct `transform-origin` (e.g. the shoulder end of an arm,
   the base of a tail, the bottom center of a bouncing body).
 - Only animate transform and opacity. Use CSS @keyframes only: no JavaScript, no SMIL (<animate>), no filters.
-- The clip is 5 seconds long; all animations start at 0s; use ease-in-out and `infinite` or `alternate infinite` where it fits.
+- The clip is 4-5 seconds long; all animations start at 0s and something must already be moving in the first 0.3s; use ease-in-out and `infinite` or `alternate infinite` where it fits.
 - Nothing may fade out, shrink away or disappear at the end: from 1s to 5s every character must stay fully visible.
 - Keep motion small and smooth: translate up to 15px, rotate up to 20deg, scale 0.92-1.08 (a pop-in from scale 0 is allowed).
 - Output the full SVG and nothing else."""
@@ -70,7 +73,7 @@ def animate_chars(s, chars):
     raise RuntimeError(f"{s['name']}: 模型没能在保留原图的前提下加上动画")
 
 
-def camera_css(keys):
+def camera_css(keys, seconds):
     """镜头关键帧 (时间%, 中心x, 中心y, 放大倍数) → CSS，保证画面不会移出画布边缘。"""
     frames = []
     for pct, cx, cy, s in keys:
@@ -78,26 +81,26 @@ def camera_css(keys):
         cy = min(max(cy, c.H / (2 * s)), c.H - c.H / (2 * s))
         frames.append(f"{pct}% {{ transform: translate({c.W / 2}px, {c.H / 2}px) scale({s}) translate({-cx:.1f}px, {-cy:.1f}px); }}")
     return ("#camera { transform-origin: 0 0; animation: cam %ss ease-in-out forwards; }\n"
-            "@keyframes cam { %s }" % (SECONDS, " ".join(frames)))
+            "@keyframes cam { %s }" % (seconds, " ".join(frames)))
 
 
-def page_html(s, bg, anim_svg):
+def page_html(s, bg, anim_svg, camera=None, seconds=None):
     hide = "".join(f"#{h}{{display:none}}" for h in s.get("hide", []))
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {c.W} {c.H}" width="{c.W}" height="{c.H}">'
-           f"<defs>{c.CRAYON_DEFS}</defs><style>{camera_css(s['camera_' + c.FMT])}\n{hide}</style>"
+           f"<defs>{c.CRAYON_DEFS}</defs><style>{camera_css(camera or s['camera_' + c.FMT], seconds or c.clip_len(s))}\n{hide}</style>"
            f'<g id="camera"><rect width="{c.W}" height="{c.H}" fill="#FFF8EC"/>'
            f'<g filter="url(#crayon)">{bg}{c.strip_svg(anim_svg)}</g>'
            f'<rect width="{c.W}" height="{c.H}" filter="url(#paper)"/></g></svg>')
     return f'<html><body style="margin:0;overflow:hidden;background:#FFF8EC">{svg}</body></html>'
 
 
-def render_video(page, name, html):
+def render_video(page, name, html, seconds):
     page.set_content(html)
     page.wait_for_timeout(300)
     page.evaluate("window.__a = document.getAnimations(); __a.forEach(a => a.pause())")
     frames = Path(tempfile.mkdtemp(prefix=f"frames_{name}_"))
     try:
-        for f in range(FPS * SECONDS):
+        for f in range(int(round(FPS * seconds))):
             page.evaluate(f"__a.forEach(a => a.currentTime = {f * 1000 / FPS})")
             page.screenshot(path=str(frames / f"{f:04d}.png"))
         mp4 = OUT / f"{name}.mp4"
@@ -110,7 +113,7 @@ def render_video(page, name, html):
 
 
 if __name__ == "__main__":
-    only = [a for a in c.positional() if a.isdigit()]
+    only = [a for a in c.positional() if a.isdigit()]   # 0 = 只做预告
     scenes = [s for i, s in enumerate(c.SCENES, 1) if not only or str(i) in only]
     OUT.mkdir(parents=True, exist_ok=True)
     bg = bg_inner()
@@ -120,5 +123,13 @@ if __name__ == "__main__":
         browser = p.chromium.launch(channel="chrome")
         page = browser.new_page(viewport={"width": c.W, "height": c.H})
         for s, anim in zip(scenes, anims):
-            render_video(page, s["name"], page_html(s, bg, anim))
+            render_video(page, s["name"], page_html(s, bg, anim, seconds=c.clip_len(s)), c.clip_len(s))
+        if c.TEASER and (not only or "0" in only):
+            # 预告：最后一幕，从它镜头的第一个关键帧（近景）用 2 秒快速拉开到全景
+            last = c.SCENES[-1]
+            anim = animate_chars(last, chars_layer(last["name"], bg))
+            _, cx, cy, z = last["camera_" + c.FMT][0]
+            cam = [(0, cx, cy, min(max(z, 1.2), 1.25)),   # 不要推太近，否则上方的大字会挡住 Lily 的头
+                    (70, c.W / 2, c.H / 2, 1.0), (100, c.W / 2, c.H / 2, 1.0)]
+            render_video(page, "00_teaser", page_html(last, bg, anim, cam, c.TEASER_SECONDS), c.TEASER_SECONDS)
         browser.close()

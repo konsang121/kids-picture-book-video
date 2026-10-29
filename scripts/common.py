@@ -59,6 +59,23 @@ def load_story():
 STORY = load_story()
 SCENES = STORY.SCENES
 
+# 节奏：短视频观众 1~2 秒内决定去留，所以每段 4 秒，开头先放一段预告（最后一幕的精华 + 一句最好玩的拟声词）
+CLIP = float(getattr(STORY, "CLIP", 4.0))
+TEASER = getattr(STORY, "TEASER", None)          # {"line": ..., "hook": ...}；None 表示不要预告开头
+TEASER_SECONDS = 2.0 if TEASER else 0.0
+
+
+def clip_len(scene):
+    """每段的时长：默认 CLIP，单独一段可以在 story.py 里用 "clip" 加长（比如拟声词很多的最后一句）。"""
+    return float(scene.get("clip", CLIP))
+
+
+def scene_start(i):
+    return TEASER_SECONDS + sum(clip_len(s) for s in SCENES[:i])
+
+
+TOTAL = scene_start(len(SCENES))
+
 # 小女孩 Lily 的固定设定（颜色都给 hex，保证每张一致）
 LILY = """Lily, a cute 5-year-old girl, drawn in a simple picture-book style:
 - round peach face (#FFD9B8), pink rosy cheeks (#FF9AA2), big round sparkling dark-brown eyes (fully round, not half-closed) with white highlights, small happy smile
@@ -94,6 +111,50 @@ CRAYON_DEFS = """
   <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" seed="2"/>
   <feColorMatrix type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.35  0 0 0 0.12 0"/>
 </filter>"""
+
+
+# ---------------- 配角：先出设定图，用户确认定稿后才能进镜头 ----------------
+# story.py 里 CAST = {"cow": "外形描述（英文，越具体越好）", ...}；每个场景用 "cast": ["cow"] 写明出场的配角。
+# 设定图在 <项目>/cast/<名字>.svg/.png，定稿记录在 cast/approved.json。重画某个配角的设定图会取消它的定稿。
+CAST = getattr(STORY, "CAST", {})
+CAST_DIR = ROOT / "cast"
+APPROVED = CAST_DIR / "approved.json"
+
+
+def approved_cast():
+    return json.loads(APPROVED.read_text(encoding="utf-8")) if APPROVED.exists() else {}
+
+
+def set_approved(names, ok=True):
+    data = approved_cast()
+    for n in names:
+        if ok:
+            data[n] = {"svg_bytes": (CAST_DIR / f"{n}.svg").stat().st_size}
+        else:
+            data.pop(n, None)
+    CAST_DIR.mkdir(exist_ok=True)
+    APPROVED.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def unapproved(names):
+    """还没定稿（或定稿后设定图又被改过）的配角。"""
+    data = approved_cast()
+    bad = []
+    for n in names:
+        f = CAST_DIR / f"{n}.svg"
+        if n not in data or not f.exists() or data[n]["svg_bytes"] != f.stat().st_size:
+            bad.append(n)
+    return bad
+
+
+def require_cast(names, what):
+    bad = unapproved(names)
+    if bad:
+        raise SystemExit(f"配角 {bad} 还没有定稿，不能{what}。先运行 generate.py cast 出设定图，用户确认后再 generate.py approve {' '.join(bad)}")
+
+
+def cast_reference(name):
+    return (CAST_DIR / f"{name}_raw.svg").read_text(encoding="utf-8")
 
 
 def lily_description():

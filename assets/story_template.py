@@ -2,11 +2,17 @@
 
 这是万圣节那一期的完整配置，做新主题时复制一份再改：
 - TITLE / LILY_EXTRA / HIGHLIGHT：简单替换
+- CLIP / TEASER / MUSIC：节奏和开头钩子（短视频观众 1~2 秒内决定去留，一般不用改）
 - BACKGROUND / LAYOUT：新场景（坐标决定角色站哪、房子/门在哪，镜头和动作都依赖它）
 - SCENES：5 句文案 + 每句的画面（横版、竖版各一份）、镜头、角色动作、要隐藏的背景分组
 """
 
 TITLE = "万圣节"                     # 成品文件名前缀：成品/万圣节_16x9.mp4
+
+CLIP = 4.0                           # 每段秒数；某一段说不完时，在那一段里加 "clip": 5.0
+# 开头 2 秒预告：最后一幕从近景拉开 + 一句很短的问句（1.5 秒内说完）+ 画面上方的大字悬念
+TEASER = {"line": "Who is at the door?", "hook": "Who is at the door? 👀"}
+MUSIC = "playful"                    # "playful" 轻快（默认）/ "lullaby" 摇篮曲（睡前主题用）
 
 # 本期 Lily 额外的服装/道具（和固定形象叠加）；不需要就留空字符串
 LILY_EXTRA = ("purple witch hat (#8E5BD6): a wide flat brim plus a TALL cone with a SHARP pointed tip (tip bent slightly to one side), "
@@ -56,8 +62,8 @@ SCENES = [
         "action_3x4": "Lily stands at x~380 facing right toward the door, one hand cupped behind her ear as if listening, curious excited face, "
                       "the candy bucket in her other hand. Draw three short curved 'knock' motion lines near the door's right side (around x=965, y=830). "
                       "Lily is the ONLY character in this picture: no cat, no ghost, no pumpkin character, no animals.",
-        "camera_16x9": [(0, 800, 450, 1.0), (40, 600, 520, 1.25), (100, 900, 520, 1.2)],
-        "camera_3x4": [(0, 600, 800, 1.0), (45, 450, 1000, 1.3), (100, 650, 950, 1.25)],
+        "camera_16x9": [(0, 560, 500, 1.4), (100, 900, 520, 1.2)],     # 第一段从近景开始、立刻在动，不要从静止的全景开始
+        "camera_3x4": [(0, 380, 1000, 1.4), (100, 650, 950, 1.25)],
         "motion": "Lily: gentle up-down bob (like breathing/excited bouncing) and a slight head-and-hat tilt toward the door as she listens. "
                   "Knock motion lines: blink in a knocking rhythm (knock-knock, pause, knock-knock) using opacity and a tiny scale pulse.",
     },
@@ -106,6 +112,7 @@ SCENES = [
     {
         "name": "05_treat",
         "line": "Trick or treat! Here is a sweet for you!",
+        "clip": 5.0,
         "hide": ["door-closed"],
         "action_16x9": "Lily stands in the CENTER, happily handing out colorful wrapped candies from her candy bucket. Around her: the tiny white ghost, "
                        "the fluffy black cat with orange bow, and the big smiling orange pumpkin, all joyful and receiving candies. A few colorful "
