@@ -8,7 +8,7 @@
 背景音乐和音效都由本脚本用正弦波现场合成（原创旋律、无采样），不存在版权问题；
 story.py 里 MUSIC = "playful"（默认，轻快，适合信息流）或 "lullaby"（睡前主题用）。
 字幕字体 Fredoka 是 SIL Open Font License 开源字体，可商用。
-输出：成品/<TITLE>_16x9.mp4、成品/<TITLE>_3x4.mp4、配音/bgm.wav、配音/sfx.wav
+输出：成品/<TITLE>_16x9.mp4、_3x4.mp4、_9x16.mp4（Reels/Shorts，由 3:4 扩展）、配音/bgm.wav、配音/sfx.wav
 """
 import array
 import math
@@ -184,12 +184,21 @@ TEXT = ("font-family: 'Fredoka', 'Segoe UI Emoji', 'Comic Sans MS', sans-serif; 
         "-webkit-text-stroke: {stroke}px #4A3B33; paint-order: stroke fill; text-shadow: 0 5px 0 rgba(74,59,51,.35);")
 
 
-def subtitle_html(line, w, h, portrait):
+# 各画幅的字幕和开头大字位置。9:16 由 3:4 上下各补 267px 得到，字幕和大字都放进 Reels / Shorts 的安全区
+# （顶部约 220px、底部约 330px 会被平台的按钮和文案挡住）
+PAD916 = 267
+LOOK = {"16x9": {"size": 60, "bottom": 46, "hook_size": 72, "hook_top": 28},
+        "3x4": {"size": 66, "bottom": 70, "hook_size": 104, "hook_top": 170},
+        "9x16": {"size": 70, "bottom": 360, "hook_size": 104, "hook_top": 300}}
+
+
+def subtitle_html(line, w, h, fmt):
+    portrait = fmt != "16x9"
     for word in HIGHLIGHT:
         line = line.replace(word, f"<b>{word}</b>")
     if portrait:  # 竖版画面窄，按句子换行，避免单个词掉到第二行
         line = re.sub(r"([.!?]</b>|[.!?]) ", r"\1<br>", line)
-    size, bottom = (66, 70) if portrait else (60, 46)
+    size, bottom = LOOK[fmt]["size"], LOOK[fmt]["bottom"]
     return f"""<html><head>{FONT}<style>
   html, body {{ margin: 0; width: {w}px; height: {h}px; background: transparent; }}
   .sub {{ position: absolute; left: 5%; right: 5%; bottom: {bottom}px; text-align: center; font-weight: 600;
@@ -198,9 +207,9 @@ def subtitle_html(line, w, h, portrait):
 </style></head><body><div class="sub">{line}</div></body></html>"""
 
 
-def hook_html(text, w, h, portrait):
+def hook_html(text, w, h, fmt):
     """开头 3 秒的大字悬念，放在画面上方（竖版避开平台顶部的按钮区）。"""
-    size, top = (104, 170) if portrait else (72, 28)
+    size, top = LOOK[fmt]["hook_size"], LOOK[fmt]["hook_top"]
     return f"""<html><head>{FONT}<style>
   html, body {{ margin: 0; width: {w}px; height: {h}px; background: transparent; }}
   .hook {{ position: absolute; left: 4%; right: 4%; top: {top}px; text-align: center; }}
@@ -218,27 +227,38 @@ def snap(page, html, path):
     return path
 
 
-def make_overlays(page, folder, w, h, portrait):
+def make_overlays(page, folder, w, h, fmt):
     """返回 [(png, 开始, 结束)]。"""
     page.set_viewport_size({"width": w, "height": h})
-    tag = "3x4" if portrait else "16x9"
+    tag = fmt
     items = []
     if c.TEASER and c.TEASER.get("hook"):
-        items.append((snap(page, hook_html(c.TEASER["hook"], w, h, portrait), folder / f"_hook_{tag}.png"), 0.0, HOOK_END))
+        items.append((snap(page, hook_html(c.TEASER["hook"], w, h, fmt), folder / f"_hook_{tag}.png"), 0.0, HOOK_END))
     for i, sc in enumerate(c.SCENES):
-        png = snap(page, subtitle_html(sc["line"], w, h, portrait), folder / f"_sub_{tag}_{sc['name']}.png")
+        png = snap(page, subtitle_html(sc["line"], w, h, fmt), folder / f"_sub_{tag}_{sc['name']}.png")
         items.append((png, c.scene_start(i), c.scene_start(i) + c.clip_len(sc)))
     return items
 
 
 # ---------------- 合成 ----------------
-def finalize(video, overlays, out):
+def finalize(video, overlays, out, fmt):
     cmd = [FFMPEG, "-y", "-loglevel", "error", "-i", str(video)]
     for png, st, end in overlays:
         cmd += ["-loop", "1", "-t", f"{end - st:.3f}", "-i", str(png)]
     cmd += ["-i", str(BGM), "-i", str(SFX)]
     # 轻微提亮、提高饱和度：在手机信息流里更抢眼
-    f, last = ["[0:v]eq=saturation=1.15:contrast=1.04:brightness=0.015[base]"], "base"
+    src = "[0:v]"
+    f = []
+    if fmt == "9x16":
+        # 3:4 → 9:16：同一画面放大铺满并大幅模糊、稍微提亮作底，原画面居中放在上面
+        # （直接延伸/镜像边缘会在镜头推近时拉出谷仓、鞋子之类的条纹）
+        h = 1600 + 2 * PAD916
+        f += ["[0:v]split[m][b0]",
+              f"[b0]scale=-2:{h},crop=1200:{h},boxblur=40:3,eq=brightness=0.06:saturation=0.9[blur]",
+              f"[blur][m]overlay=0:{PAD916}[tall]"]
+        src = "[tall]"
+    f.append(f"{src}eq=saturation=1.15:contrast=1.04:brightness=0.015[base]")
+    last = "base"
     for i, (_, st, end) in enumerate(overlays):
         fade_in = "" if st == 0 else "fade=t=in:st=0.15:d=0.2:alpha=1,"   # 开头大字第 1 帧就要完整出现
         f.append(f"[{i + 1}:v]format=rgba,{fade_in}"
@@ -269,15 +289,17 @@ if __name__ == "__main__":
     if not SFX.exists() or "--remusic" in sys.argv:
         make_sfx()
     OUT.mkdir(exist_ok=True)
-    jobs = [(c.ROOT / "动画" / "配音版" / "完整版.mp4", 1600, 900, False, f"{c.STORY.TITLE}_16x9.mp4"),
-            (c.ROOT / "3x4" / "动画" / "配音版" / "完整版.mp4", 1200, 1600, True, f"{c.STORY.TITLE}_3x4.mp4")]
+    tall = c.ROOT / "3x4" / "动画" / "配音版" / "完整版.mp4"
+    jobs = [(c.ROOT / "动画" / "配音版" / "完整版.mp4", 1600, 900, "16x9"),
+            (tall, 1200, 1600, "3x4"),
+            (tall, 1200, 1600 + 2 * PAD916, "9x16")]     # Reels / Shorts 用，由 3:4 扩展
     jobs = [j for j in jobs if j[0].exists()]
     if not jobs:
         raise SystemExit("没找到 动画/配音版/完整版.mp4，先运行 voiceover.py")
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chrome")
         page = browser.new_page()
-        overlays = [make_overlays(page, OUT, w, h, portrait) for _, w, h, portrait, _ in jobs]
+        overlays = [make_overlays(page, OUT, w, h, fmt) for _, w, h, fmt in jobs]
         browser.close()
-    for (video, _, _, _, name), ov in zip(jobs, overlays):
-        finalize(video, ov, OUT / name)
+    for (video, _, _, fmt), ov in zip(jobs, overlays):
+        finalize(video, ov, OUT / f"{c.STORY.TITLE}_{fmt}.mp4", fmt)

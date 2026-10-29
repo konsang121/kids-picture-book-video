@@ -33,7 +33,7 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 ├── 动画/  01_*.mp4 …  配音版/完整版.mp4
 ├── 3x4/动画/ …
 ├── 配音/  01_*.mp3 …  bgm.wav
-└── 成品/  <TITLE>_16x9.mp4  <TITLE>_3x4.mp4
+└── 成品/  <TITLE>_16x9.mp4  <TITLE>_3x4.mp4  <TITLE>_9x16.mp4
 ```
 
 下文的 `$S` 指本 skill 的 `scripts/` 目录。
@@ -137,6 +137,7 @@ python $S/finalize.py --project <项目>
 - 开头大字：`TEASER["hook"]`，黄色圆角底，从第 1 帧显示到第一句开口之后
 - 背景音乐和音效：脚本现场合成的原创曲子（轻快木琴版或音乐盒摇篮曲），没有任何采样，**不存在版权问题**。人声说话时音乐会自动压低，音效不压
 - 画面：轻微提亮、提高饱和度
+- 同时输出 9:16（1200×2134，给 Facebook/Instagram Reels、YouTube Shorts、抖音全屏）：由 3:4 居中放置，上下用同一画面放大模糊后的底填满；字幕和开头大字移进 Reels 的安全区（避开顶部约 11%、底部约 17%）
 - 响度：标准化到约 -15 LUFS，适合手机外放
 - 可以用 `--music 0.15` 调音乐音量（默认 0.22）；改了 `CLIP`、`TEASER`、`MUSIC` 或某段的 `clip` 后，要加 `--remusic` 重新合成音乐和音效
 
@@ -153,6 +154,6 @@ python $S/finalize.py --project <项目>
 
 ## 交付清单
 
-- 成品：`成品/<TITLE>_16x9.mp4`（YouTube）和 `成品/<TITLE>_3x4.mp4`（抖音、视频号、小红书）
+- 成品：`成品/<TITLE>_16x9.mp4`（YouTube 长视频）、`_3x4.mp4`（视频号、小红书、Facebook 动态）、`_9x16.mp4`（Reels、Shorts、抖音全屏）
 - 用 SendUserFile 把成品、关键图片发给用户
 - 告诉用户哪些部分已经检查过、哪些需要他们自己确认（尤其是音乐的听感），以及重做某一步的命令
