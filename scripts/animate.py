@@ -8,6 +8,7 @@
     python animate.py --project ... --3x4      # 3:4 → 3x4/动画/
     python animate.py --project ... 2 --redo   # 让模型重新设计第 2 个场景的角色动作
 """
+import json
 import re
 import shutil
 import subprocess
@@ -51,10 +52,22 @@ def bg_inner():
 
 
 def chars_layer(name, bg):
-    """从合成好的场景 SVG 里取出角色层（背景之后、蜡笔滤镜组结束之前的部分）。"""
-    scene = (c.SRC / f"{name}.svg").read_text(encoding="utf-8")
-    i = scene.index(bg) + len(bg)
-    return scene[i:scene.rindex("</g><rect")]
+    """出图时保存的配角层（不含 Lily，Lily 每帧由 character.js 重新画）。"""
+    return c.strip_svg((c.SRC / f"_cast_{name}.svg").read_text(encoding="utf-8"))
+
+
+# Lily 每帧的动作参数：走路/跳跃/手势按周期推进 t；站立类动作轻轻上下起伏
+LILY_PERIOD = {"walk": 0.8, "jump": 1.0, "wave": 0.9, "cheer": 1.0, "flap": 0.6, "pat": 1.1, "call": 1.4, "nose": 1.0}
+LILY_JS = """
+window.__lilyBase = %s;
+window.__lily = function (sec) {
+  const P = %s, o = Object.assign({}, __lilyBase), per = P[o.action] || 1.4;
+  o.t = ((o.t || 0) + sec / per) %% 1;
+  if (!(o.action in P)) o.y = o.y - 4 * o.scale * Math.abs(Math.sin(Math.PI * sec / 0.7));
+  document.getElementById("lily-slot").innerHTML = Lily.draw(o);
+};
+__lily(0);
+"""
 
 
 def animate_chars(s, chars):
@@ -64,7 +77,7 @@ def animate_chars(s, chars):
     src = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {c.W} {c.H}">{chars}</svg>'
     want = len(DRAW_TAGS.findall(src))
     for attempt in range(3):
-        svg = c.ask(ANIM_RULES, f'Picture-book line: "{s["line"]}"\n\nMotion to add:\n{s["motion"]}\n\nCharacter layer SVG:\n{src}')
+        svg = c.ask(ANIM_RULES, f'Picture-book line: "{s["line"]}"\n\nMotion to add (this layer has NO Lily in it - skip anything about Lily):\n{s["motion"]}\n\nCharacter layer SVG:\n{src}')
         got = len(DRAW_TAGS.findall(svg))
         if got >= want * 0.97 and "@keyframes" in svg:
             cache.write_text(svg, encoding="utf-8")
@@ -89,9 +102,10 @@ def page_html(s, bg, anim_svg, camera=None, seconds=None):
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {c.W} {c.H}" width="{c.W}" height="{c.H}">'
            f"<defs>{c.CRAYON_DEFS}</defs><style>{camera_css(camera or s['camera_' + c.FMT], seconds or c.clip_len(s))}\n{hide}</style>"
            f'<g id="camera"><rect width="{c.W}" height="{c.H}" fill="#FFF8EC"/>'
-           f'<g filter="url(#crayon)">{bg}{c.strip_svg(anim_svg)}</g>'
+           f'<g filter="url(#crayon)">{bg}{c.strip_svg(anim_svg)}<g id="lily-slot"></g></g>'
            f'<rect width="{c.W}" height="{c.H}" filter="url(#paper)"/></g></svg>')
-    return f'<html><body style="margin:0;overflow:hidden;background:#FFF8EC">{svg}</body></html>'
+    script = c.CHARACTER_JS.read_text(encoding="utf-8") + LILY_JS % (json.dumps(c.lily_opts(s)), json.dumps(LILY_PERIOD))
+    return f'<html><body style="margin:0;overflow:hidden;background:#FFF8EC">{svg}<script>{script}</script></body></html>'
 
 
 def render_video(page, name, html, seconds):
@@ -101,7 +115,7 @@ def render_video(page, name, html, seconds):
     frames = Path(tempfile.mkdtemp(prefix=f"frames_{name}_"))
     try:
         for f in range(int(round(FPS * seconds))):
-            page.evaluate(f"__a.forEach(a => a.currentTime = {f * 1000 / FPS})")
+            page.evaluate(f"__lily({f / FPS}); __a.forEach(a => a.currentTime = {f * 1000 / FPS})")
             page.screenshot(path=str(frames / f"{f:04d}.png"))
         mp4 = OUT / f"{name}.mp4"
         subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error", "-framerate", str(FPS),

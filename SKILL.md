@@ -1,6 +1,6 @@
 ---
 name: kids-picture-book-video
-description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Time）：选主题、写 5 句英文文案、DeepSeek 画蜡笔风绘本图（横版 16:9 + 竖版 3:4）、做 5 秒镜头动画、英文童声配音、加字幕和原创背景音乐、写 YouTube/抖音/小红书标题说明。只要用户提到儿童英语绘本、磨耳朵视频、Lily、做新一期绘本、给某个主题（节日、动物、颜色、日常习惯等）做英语短视频，或者想重做其中某一步（重画某张图、改配音、调背景音乐、加字幕），就使用这个 skill，即使用户没有说出“绘本”两个字。
+description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Time）：选主题、写 5 句英文文案、DeepSeek 画背景和配角、character.js 画主角 Lily（横版 16:9 + 竖版 3:4）、配角定稿审核、做镜头动画、英文童声配音、加字幕和原创背景音乐、写 YouTube/抖音/小红书标题说明。只要用户提到儿童英语绘本、磨耳朵视频、Lily、做新一期绘本、给某个主题（节日、动物、颜色、日常习惯等）做英语短视频，或者想重做其中某一步（重画某张图、改配音、调背景音乐、加字幕），就使用这个 skill，即使用户没有说出“绘本”两个字。
 ---
 
 # 儿童英语绘本短视频
@@ -8,10 +8,13 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 为频道 **Lily Story Time** 制作一期约 22–25 秒的英语绘本短视频：2 秒预告开头 + 5 句英文 × 每句 4 秒画面。
 主角永远是小女孩 **Lily**，画风是明亮柔和的儿童蜡笔画，适合 3–6 岁孩子磨耳朵。
 
+**Lily 只由 `assets/character.js` 绘制**（造型已定稿，绘本和 MV 共用这一份）。模型只画背景、配角和小特效，Lily 由脚本按 story.py 里的位置、动作、表情画上去，动画里逐帧更新她的动作。需要新动作、表情或道具时，扩展 character.js（只加不改已有造型），并给用户看新动作的效果。
+
 整条流水线已经写成脚本，放在本 skill 的 `scripts/` 里。你的工作是：和用户定文案 → 写好本期的 `story.py` → 按顺序运行脚本 → **每一步都亲自检查结果**（读 PNG、抽帧看视频），发现问题就修正后重跑那一步 → 交付成品和发布文案。
 
 ## 准备工作（首次或换电脑时检查）
 
+- Node.js（`node` 命令可用）：用来运行 character.js 画 Lily。
 - Python 包：`playwright`、`imageio-ffmpeg`、`edge-tts`。edge-tts 要用 `python -m pip install edge-tts --only-binary :all:` 安装，否则在 Python 3.14 上会卡在编译依赖。
 - Google Chrome：装在 `C:\Program Files\Google\Chrome\Application\chrome.exe`（Edge 的无头截图导不出图，所以用 Chrome）。
 - DeepSeek Key：依次读取环境变量 `DEEPSEEK_API_KEY`、环境变量 `DEEPSEEK_KEY_FILE`（key 文件路径），或 skill 根目录 `.deepseek_key_file` 里写的路径。key 文件里只要包含 `sk-...` 就行。这个文件不在 Git 仓库里；如果缺失，请用户告诉你 key 文件放在哪，再帮他建一个。不要在回复里显示 key。
@@ -24,8 +27,8 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 ```
 <项目>/
 ├── story.py              # 本期配置（你来写）
-├── _lily_raw.svg         # Lily 参考图（没有时自动从 skill 的 assets/lily.svg 复制）
-├── _bg_raw.svg  01_*.png …         # 横版背景和 5 张图
+├── cast/                 # 配角设定图和定稿记录 approved.json
+├── _bg_raw.svg  _cast_*.svg  01_*.png …   # 横版背景、配角层、5 张图
 ├── 3x4/  _bg_raw.svg  01_*.png …   # 竖版
 ├── 动画/  01_*.mp4 …  配音版/完整版.mp4
 ├── 3x4/动画/ …
@@ -60,17 +63,17 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 
 ## 第 2 步：写 story.py
 
-复制 `assets/story_template.py` 到项目文件夹，改名为 `story.py`。模板是万圣节那一期的完整配置，照着改：
+复制 `assets/story_template.py` 到项目文件夹，改名为 `story.py`。模板是动物系列第 1 期（农场动物）的完整配置，照着改：
 
 - `TITLE`：成品文件名前缀
 - `CLIP` / `TEASER` / `MUSIC`：节奏和开头钩子，见上一节。`TEASER["line"]` 要在 1.8 秒内说完，所以用问句，不要用一串拟声词
-- `LILY_EXTRA`：本期服装和道具（例如雨衣雨靴）。Lily 的脸、双马尾、紫色星星裙、橙白条纹袜、黑鞋是固定形象，写在 `common.py` 里，不要改
+- 每个场景的 `lily_16x9` / `lily_3x4`：Lily 的脚底位置 `x, y`、`action`、`expression`，可选 `view`、`facing`、`prop`、`scale`（默认横版 1.6、竖版 2.13）。可用动作：stand、walk、jump、hug、hold、wave、cheer、flap、pat（右手伸向画面右侧抚摸）、call（手放嘴边）、nose（推鼻头）；表情：happy、shy、sad、surprised；道具：balloon、flower、lollipop、book、teddy。本期需要的服装（雨衣、帽子）或动作没有时，先扩展 character.js
 - `HIGHLIGHT`：字幕里要橙色高亮的词，必须和句子里的写法一字不差
 - `BACKGROUND`：本期场景。需要在镜头之间变化的部分（门开/门关、灯开/灯关）画成两个带 id 的分组，再在场景的 `hide` 里写要隐藏哪个
 - `LAYOUT`：横版、竖版各一份坐标。角色站位、镜头运动都依赖它，所以要写具体的数字。竖版要把 y>1400 留空给字幕
-- `SCENES`：每句一个字典，包括 `name`、`line`、`hide`、横版和竖版的画面描述 `action_16x9`/`action_3x4`、镜头 `camera_16x9`/`camera_3x4`、角色动作 `motion`
+- `SCENES`：每句一个字典，包括 `name`、`line`、`cast`、`hide`、Lily 的姿势、配角的画面描述 `action_16x9`/`action_3x4`、镜头 `camera_16x9`/`camera_3x4`、配角动作 `motion`
 
-写画面描述时要写清楚**谁在哪个坐标、在做什么**。只想让 Lily 一个人出现的画面，要明确写“Lily is the ONLY character”，否则模型会顺手多画别的角色。
+写配角的画面描述时要写清楚**谁在哪个坐标、在做什么、怎么和 Lily 互动**。脚本会把 Lily 的包围盒和双手坐标告诉模型，让配角凑到她手边（例如被抚摸的羊头正好在她右手下）。只有 Lily 一个人的画面，`cast` 留空，模型只画小特效。
 
 镜头是 `(时间%, 中心x, 中心y, 放大倍数)` 的关键帧。常用的写法：开头全景推近主角、从 Lily 摇到另一个角色、最后一句从近景拉开成全景。
 
@@ -91,7 +94,7 @@ python $S/generate.py --project <项目>
 python $S/generate.py --project <项目> --3x4
 ```
 
-背景只画一次，5 张共用，所以每张的房子和场景完全一样；角色层逐张画好，叠在背景上。横版和竖版可以同时跑（各开一个进程）。重画单张用 `... 3`，只重画背景用 `... bg`（会输出 `_bg_preview.png` 供检查）。
+背景只画一次，5 张共用，所以每张的房子和场景完全一样；配角层逐张画好，叠在背景上，最后由 character.js 把 Lily 画在最上层。横版和竖版可以同时跑（各开一个进程）。重画单张用 `... 3`，只重画背景用 `... bg`（会输出 `_bg_preview.png` 供检查）。
 
 **每张图都要用 Read 打开看。**常见问题和处理：
 
@@ -99,9 +102,9 @@ python $S/generate.py --project <项目> --3x4
 |---|---|
 | 画了文案里没有的角色 | 在 action 里写明“ONLY character …”，再重画这一张 |
 | 可切换的门或灯整个不见了 | 脚本会自动去掉模型加的 `display:none`；如果还是不见，检查 `hide` 写得对不对 |
-| Lily 手臂过长、姿势怪 | 在 action 里写“normal arm length”，再重画 |
+| 配角和 Lily 的手没对上 | 调整场景里 Lily 的 x 或配角坐标，再重画这一张 |
 | 天空出现像下雨的斜线 | STYLE 里已经禁止；如果仍然出现，就重画 |
-| Lily 的样子和以前不一样 | 不要重画定妆图（`0` 会覆盖 `_lily_raw.svg`）。只重画那一张场景，参考图会让她保持一致 |
+| 配角挡住了 Lily | Lily 永远在最上层；如果配角被 Lily 挡住，把配角往外挪 |
 
 同一张通常重画 1–2 次就能得到可用的版本。重画前先把原图另存（例如 `03_cat_v1.png`），让用户可以比较。
 
@@ -112,9 +115,9 @@ python $S/animate.py --project <项目>
 python $S/animate.py --project <项目> --3x4
 ```
 
-模型只在角色层上加 CSS 动画，不改画面；镜头运动由 story.py 决定。脚本会检查模型没有删掉图形，不合格自动重试。每段需要 1–2 分钟，10 段建议放在后台运行。
+模型只在配角层上加 CSS 动画，不改画面；Lily 每一帧都由 character.js 按动作周期重新绘制（挥手、扇手臂、抚摸会来回摆动，站立类动作会轻轻起伏）；镜头运动由 story.py 决定。脚本会检查模型没有删掉图形，不合格自动重试。每段需要 1–2 分钟，10 段建议放在后台运行。
 
-用 ffmpeg 从每段抽 4 帧（开头、1/3、2/3、最后一帧）拼图检查，`00_teaser.mp4` 也要看。最常见的问题是**角色在结尾淡出消失**，规则里已经禁止；如果还是出现，用 `... 编号 --redo` 让模型重新设计动作，或者直接改 `动画/_anim_<名字>.svg` 里那段 keyframes。注意：第一帧没有某个角色可能是“弹出”效果，属于正常。
+用 ffmpeg 从每段抽 4 帧（开头、1/3、2/3、最后一帧）拼图检查，`00_teaser.mp4` 也要看。改了 Lily 的姿势不用重新调用 API：直接重跑 animate.py 即可。最常见的问题是**配角在结尾淡出消失**，规则里已经禁止；如果还是出现，用 `... 编号 --redo` 让模型重新设计动作，或者直接改 `动画/_anim_<名字>.svg` 里那段 keyframes。注意：第一帧没有某个角色可能是“弹出”效果，属于正常。
 
 ## 第 5 步：配音
 

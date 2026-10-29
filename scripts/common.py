@@ -7,7 +7,6 @@ import importlib.util
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import urllib.request
@@ -76,15 +75,28 @@ def scene_start(i):
 
 TOTAL = scene_start(len(SCENES))
 
-# 小女孩 Lily 的固定设定（颜色都给 hex，保证每张一致）
-LILY = """Lily, a cute 5-year-old girl, drawn in a simple picture-book style:
-- round peach face (#FFD9B8), pink rosy cheeks (#FF9AA2), big round sparkling dark-brown eyes (fully round, not half-closed) with white highlights, small happy smile
-- dark brown hair (#5A3A22) in two big puffy pigtails, one on each side, each tied with an orange ribbon bow (#FF8C1A) at the base of the pigtail, well away from her eyes
-- light purple A-line dress (#C9A7F2) decorated with small yellow stars (#FFD93D)
-- orange and white horizontal striped tights (#FF8C1A / #FFFFFF), ALWAYS clearly visible on both legs between the dress hem and the shoes
-- black round-toe shoes (#2B2B2B)
-- proportions: big head (about 1/3 of body height), short chubby arms and legs"""
-LILY_EXTRA = getattr(STORY, "LILY_EXTRA", "")   # 本期额外的服装/道具，例如女巫帽、雨衣
+# ---------------- 主角 Lily：只由 assets/character.js 绘制（造型已定稿，模型不画她） ----------------
+# 每个场景在 story.py 里写 "lily_16x9" / "lily_3x4"：{view, facing, expression, action, prop, t, x, y, scale}
+CHARACTER_JS = SKILL / "assets" / "character.js"
+LILY_SCALE = {"16x9": 1.6, "3x4": 2.13}     # 绘本里 Lily 的默认大小（约 480px / 640px 高）
+
+
+def lily_opts(scene):
+    o = dict(scene["lily_" + FMT])
+    o.setdefault("scale", LILY_SCALE[FMT])
+    o["filter"] = False                      # 外层已经有蜡笔滤镜
+    return o
+
+
+def lily_render(opts):
+    """调 node 用 character.js 画 Lily，返回 (svg 片段, 关键点)。"""
+    js = ("const L=require(process.argv[1]);const o=JSON.parse(process.argv[2]);"
+          "process.stdout.write(JSON.stringify({svg:L.draw(o),pts:L.points(o)}))")
+    out = subprocess.run(["node", "-e", js, str(CHARACTER_JS), json.dumps(opts)], capture_output=True, text=True,
+                         encoding="utf-8", check=True).stdout
+    d = json.loads(out)
+    return d["svg"], d["pts"]
+
 
 STYLE = """Style rules:
 - children's crayon picture book, bright cheerful colors, fresh and lively, eye-level view
@@ -155,18 +167,6 @@ def require_cast(names, what):
 
 def cast_reference(name):
     return (CAST_DIR / f"{name}_raw.svg").read_text(encoding="utf-8")
-
-
-def lily_description():
-    return LILY + ("\n- " + LILY_EXTRA if LILY_EXTRA else "")
-
-
-def lily_reference():
-    """项目里的 Lily 参考图；没有就用 skill 自带的那版（万圣节第一期定稿的形象）。"""
-    f = ROOT / "_lily_raw.svg"
-    if not f.exists():
-        shutil.copy(SKILL / "assets" / "lily.svg", f)
-    return f.read_text(encoding="utf-8")
 
 
 def api_key():
