@@ -58,7 +58,7 @@ def chars_layer(name, bg):
 
 # Lily 每帧的动作参数：走路/跳跃/手势按周期推进 t；站立类动作轻轻上下起伏
 LILY_PERIOD = {"walk": 0.8, "jump": 1.0, "wave": 0.9, "cheer": 1.0, "flap": 0.6, "pat": 1.1, "call": 1.4, "nose": 1.0,
-               "touchNose": 0.7, "touchEars": 0.8, "touchEyes": 2.0, "touchMouth": 1.6, "touchAll": 4.0}
+               "touchNose": 0.7, "touchEars": 0.8, "touchEyes": 2.0, "touchMouth": 1.6, "touchAll": 4.0, "knock": 1.3}
 LILY_JS = """
 window.__lilyBase = %s;
 window.__lily = function (sec) {

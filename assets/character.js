@@ -3,6 +3,7 @@
  * 造型已定稿 v1.0（2026-10-29，以 角色设定图.png 为准）。之后只加新表情/动作/道具，不改已有造型参数。
  * v1.1（2026-10-29）：新增绘本用的手势动作 wave/cheer/flap/pat/call/nose，新增 filter:false 选项和 Lily.points()。
  * v1.2（2026-10-29）：新增摸五官动作 touchNose/touchEars/touchEyes/touchMouth/touchAll（正面用），眨眼和亲亲嘴型只在这些动作里出现。
+ * v1.3（2026-10-30）：新增服装 hat:"witch"（紫色巫师帽）、左手提的 carry:"pumpkinBucket"（南瓜糖果桶）、敲门动作 knock。
  * 这份（skill 的 assets/character.js）是唯一的主版本，绘本和 MV 都从这里取。
  *
  * 所有镜头都通过这里画角色，不要在镜头里重新画她，这样造型从头到尾一致。
@@ -19,6 +20,10 @@
  *                           //       "call" 手放嘴边喊 | "nose" 手指推鼻头（学小猪）
  *                           //       （以下正面用）"touchNose" 点自己鼻子 | "touchEars" 双手摸耳朵 | "touchEyes" 双手指眼睛并眨眼
  *                           //       "touchMouth" 手放嘴边飞吻 | "touchAll" 依次摸鼻子→耳朵→眼睛→嘴巴→欢呼（t 走完一轮）
+ *                           //       "knock" 右手在头旁边向画面右侧敲门（咚咚、停一下）
+ *     hat: null,            // 服装帽子："witch" 紫色巫师帽（正面/侧面/背面都有）
+ *     carry: null,          // 左手提着的东西（和右手道具 prop 分开）："pumpkinBucket" 南瓜糖果桶
+ *                           //   左手要垂下来才提得住：不要和 cheer/flap/jump/hug/touch* 一起用
  *     prop: null,           // 道具（action 为 hold 或 hug 时）："balloon" | "flower" | "lollipop" | "book" | "teddy"
  *     t: 0,                 // 动作进度 0~1（走路一个循环、跳跃一次起落），做动画时逐帧递增
  *     x: 0, y: 0,           // 脚底中心在画面里的位置
@@ -53,7 +58,9 @@
   const VIEWS = ["front", "side", "back"];
   const EXPRESSIONS = ["happy", "shy", "sad", "surprised"];
   const ACTIONS = ["stand", "walk", "jump", "hug", "hold", "wave", "cheer", "flap", "pat", "call", "nose",
-                   "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll"];
+                   "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll", "knock"];
+  const HATS = ["witch"];
+  const CARRY = ["pumpkinBucket"];
   const PROPS = ["balloon", "flower", "lollipop", "book", "teddy"];
 
   // ---------------- 小工具 ----------------
@@ -320,6 +327,9 @@
       p.targetR = { x: 46, y: -192 }; p.armsLast = true;
     } else if (action === "nose") {
       p.targetR = { x: 6, y: -208 + 2 * ph }; p.armsLast = true;
+    } else if (action === "knock") {
+      const k = t % 1, tap = Math.max(0, Math.sin(Math.PI * Math.min(k / 0.18, 1))) + Math.max(0, Math.sin(Math.PI * Math.min(Math.max((k - 0.22) / 0.18, 0), 1)));
+      p.targetR = { x: 66 + 14 * Math.min(tap, 1), y: -198 }; p.armsLast = true; p.fist = true;
     } else if (action.startsWith("touch")) {
       Object.assign(p, touch(action, t)); p.armsLast = true;
     } else if (action === "hold") {
@@ -366,6 +376,32 @@
     return { targetL: k.L, targetR: k.R, face: { closed: !!k.closed, pucker: !!k.pucker } };
   }
 
+  // ---------------- 服装：巫师帽（头部坐标，画在头发上面） ----------------
+  function witchHat(view) {
+    const P = "#8E5BD6", band = C.bow;
+    if (view === "side") {
+      return `<g transform="rotate(-8)"><ellipse cx="-2" cy="-52" rx="80" ry="15" fill="${P}" ${stroke()}/>` +
+        `<path d="M-40,-58 L-6,-150 Q4,-162 24,-158 Q12,-150 10,-140 L40,-58 Z" fill="${P}" ${stroke()}/>` +
+        `<path d="M-38,-62 Q0,-72 38,-62 L33,-78 Q0,-88 -33,-78 Z" fill="${band}" ${stroke(4)}/></g>`;
+    }
+    return `<ellipse cx="0" cy="-54" rx="88" ry="17" fill="${P}" ${stroke()}/>` +
+      `<path d="M-42,-60 L-8,-152 Q2,-164 24,-160 Q12,-152 10,-142 L42,-60 Z" fill="${P}" ${stroke()}/>` +
+      `<path d="M-40,-64 Q0,-74 40,-64 L35,-80 Q0,-90 -35,-80 Z" fill="${band}" ${stroke(4)}/>` +
+      `<path d="M-14,-108 L-4,-128" stroke="#B48CF0" stroke-width="5" stroke-linecap="round" opacity="0.8"/>`;
+  }
+
+  /** 左手提着的南瓜糖果桶：提手挂在手上，桶垂在手下方。先画桶，再画手，看起来是握着提手。 */
+  function drawCarry(item, hp) {
+    if (item !== "pumpkinBucket") return "";
+    const x = hp.x, y = hp.y + 40;
+    return `<path d="M${f(x - 24)},${f(y - 12)} Q${f(x - 22)},${f(hp.y - 6)} ${f(x)},${f(hp.y)} Q${f(x + 22)},${f(hp.y - 6)} ${f(x + 24)},${f(y - 12)}" fill="none" stroke="#2B2B2B" stroke-width="4" stroke-linecap="round"/>` +
+      `<ellipse cx="${f(x)}" cy="${f(y + 4)}" rx="30" ry="25" fill="#FF8C1A" ${stroke(4)}/>` +
+      `<path d="M${f(x - 10)},${f(y - 20)} Q${f(x - 14)},${f(y + 4)} ${f(x - 10)},${f(y + 28)} M${f(x + 10)},${f(y - 20)} Q${f(x + 14)},${f(y + 4)} ${f(x + 10)},${f(y + 28)}" fill="none" stroke="#D96E0A" stroke-width="3"/>` +
+      `<ellipse cx="${f(x)}" cy="${f(y - 18)}" rx="22" ry="6" fill="#5A3A22" ${stroke(3)}/>` +
+      `<path d="M${f(x - 15)},${f(y)} l6,-9 l6,9 Z M${f(x + 3)},${f(y)} l6,-9 l6,9 Z" fill="#4A3B33"/>` +
+      `<path d="M${f(x - 14)},${f(y + 9)} Q${f(x)},${f(y + 22)} ${f(x + 14)},${f(y + 9)}" fill="none" stroke="#4A3B33" stroke-width="4" stroke-linecap="round"/>`;
+  }
+
   // ---------------- 组装 ----------------
   function body(o) {
     const { view, expression, action, prop } = o;
@@ -381,13 +417,13 @@
       const knee = P.bend * 0.9;
       const farLeg = limb(hip, P.legL - knee * 0.3, knee, LEG / 2, LEG / 2, 1);
       const nearLeg = limb(hip, P.legR + knee * 0.2, knee, LEG / 2, LEG / 2, 1);
-      back += armPath(farArm, true) + hand(farArm.end, false, true);
+      back += armPath(farArm, true) + drawCarry(o.carry, farArm.end) + hand(farArm.end, !!o.carry, true);
       back += `<g opacity="0.85">${bentLeg(hip, farLeg)}</g>`;     // 远处的腿稍暗一点，看起来在后面
       mid += bentLeg(hip, nearLeg);
       mid += dressSide();
       lastPts = { handL: farArm.end, handR: nearArm.end };
       front += armPath(nearArm) + drawProp(heldProp, nearArm.end, "side") + sleeve(2, -160) + hand(nearArm.end, !!heldProp);
-      top = `<g transform="translate(${HEAD.x},${HEAD.y})">${headSide(expression)}</g>`;
+      top = `<g transform="translate(${HEAD.x},${HEAD.y})">${headSide(expression)}${o.hat ? witchHat("side") : ""}</g>`;
       return wrap(o, lift, back + mid + front + top, P);
     }
 
@@ -417,11 +453,11 @@
               armPath({ start: sR, elbow: { x: 50, y: -128 }, end: { x: 30, y: -138 } }, true);
       arms += sleeve(-38, -160) + sleeve(38, -160);
     } else {
-      arms += armPath(armL) + hand(armL.end, false);
-      arms += armPath(armR) + drawProp(heldProp, armR.end, view) + hand(armR.end, !!heldProp);
+      arms += armPath(armL) + drawCarry(o.carry, armL.end) + hand(armL.end, !!o.carry);
+      arms += armPath(armR) + drawProp(heldProp, armR.end, view) + hand(armR.end, !!heldProp || !!P.fist);
       arms += sleeve(-38, -160) + sleeve(38, -160);
     }
-    const head = `<g transform="translate(${HEAD.x},${HEAD.y})">${isBack ? headBack() : headFront(expression, P.face)}</g>`;
+    const head = `<g transform="translate(${HEAD.x},${HEAD.y})">${isBack ? headBack() : headFront(expression, P.face)}${o.hat ? witchHat(view) : ""}</g>`;
     const content = P.armsLast ? back + mid + head + arms : back + mid + arms + head;
     return wrap(o, lift, content, P);
   }
@@ -445,6 +481,8 @@
     if (!ACTIONS.includes(o.action)) throw new Error(`action 只能是 ${ACTIONS.join("/")}`);
     if (o.prop && !PROPS.includes(o.prop)) throw new Error(`prop 只能是 ${PROPS.join("/")}`);
     if (o.action === "hold" && !o.prop) o.prop = "balloon";
+    if (o.hat && !HATS.includes(o.hat)) throw new Error(`hat 只能是 ${HATS.join("/")}`);
+    if (o.carry && !CARRY.includes(o.carry)) throw new Error(`carry 只能是 ${CARRY.join("/")}`);
     return body(o);
   }
 
@@ -456,8 +494,8 @@
     const m = o.view === "side" && o.facing === "left" ? -1 : 1, s = o.scale || 1;
     const w = (p) => ({ x: Math.round(o.x + s * m * p.x), y: Math.round(o.y + s * (p.y - lift)) });
     const hl = w(lastPts.handL), hr = w(lastPts.handR);
-    return { handL: hl, handR: hr, head: w({ x: 0, y: HEAD.y + 8 }), top: Math.round(o.y + s * (-302 - lift)), bottom: Math.round(o.y),
-             left: Math.min(hl.x, hr.x, Math.round(o.x - s * 105)), right: Math.max(hl.x, hr.x, Math.round(o.x + s * 105)) };
+    return { handL: hl, handR: hr, head: w({ x: 0, y: HEAD.y + 8 }), top: Math.round(o.y + s * ((o.hat ? -396 : -302) - lift)), bottom: Math.round(o.y),
+             left: Math.min(hl.x - (o.carry ? 32 * s : 0), hr.x, Math.round(o.x - s * 105)), right: Math.max(hl.x, hr.x, Math.round(o.x + s * 105)) };
   }
 
   function crayonDefs() {
@@ -477,7 +515,7 @@
       `<defs>${crayonDefs()}</defs>${frame.background ? `<rect width="${w}" height="${h}" fill="${frame.background}"/>` : ""}${draw(o)}</svg>`;
   }
 
-  const Lily = { draw, svg, points, crayonDefs, VIEWS, EXPRESSIONS, ACTIONS, PROPS, COLORS: C };
+  const Lily = { draw, svg, points, crayonDefs, VIEWS, EXPRESSIONS, ACTIONS, PROPS, HATS, CARRY, COLORS: C };
   if (typeof module !== "undefined" && module.exports) module.exports = Lily;
   else root.Lily = Lily;
 })(typeof window !== "undefined" ? window : globalThis);

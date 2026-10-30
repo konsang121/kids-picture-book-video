@@ -67,7 +67,7 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 
 - `TITLE`：成品文件名前缀
 - `CLIP` / `TEASER` / `MUSIC`：节奏和开头钩子，见上一节。`TEASER["line"]` 要在 1.8 秒内说完，所以用问句，不要用一串拟声词
-- 每个场景的 `lily_16x9` / `lily_3x4`：Lily 的脚底位置 `x, y`、`action`、`expression`，可选 `view`、`facing`、`prop`、`scale`（默认横版 1.6、竖版 2.13）。可用动作：stand、walk、jump、hug、hold、wave、cheer、flap、pat（右手伸向画面右侧抚摸）、call（手放嘴边）、nose（推鼻头），以及正面用的摸五官 touchNose、touchEars、touchEyes（会眨眼）、touchMouth（飞吻）、touchAll（依次摸一遍再欢呼）；表情：happy、shy、sad、surprised；道具：balloon、flower、lollipop、book、teddy。本期需要的服装（雨衣、帽子）或动作没有时，先扩展 character.js
+- 每个场景的 `lily_16x9` / `lily_3x4`：Lily 的脚底位置 `x, y`、`action`、`expression`，可选 `view`、`facing`、`prop`、`scale`（默认横版 1.6、竖版 2.13）。可用动作：stand、walk、jump、hug、hold、wave、cheer、flap、pat（右手伸向画面右侧抚摸）、call（手放嘴边）、nose（推鼻头），以及正面用的摸五官 touchNose、touchEars、touchEyes（会眨眼）、touchMouth（飞吻）、touchAll（依次摸一遍再欢呼）、knock（敲门）；服装 hat:"witch"，左手提 carry:"pumpkinBucket"；表情：happy、shy、sad、surprised；道具：balloon、flower、lollipop、book、teddy。本期需要的服装（雨衣、帽子）或动作没有时，先扩展 character.js
 - `HIGHLIGHT`：字幕里要橙色高亮的词，必须和句子里的写法一字不差
 - `BACKGROUND`：本期场景。需要在镜头之间变化的部分（门开/门关、灯开/灯关）画成两个带 id 的分组，再在场景的 `hide` 里写要隐藏哪个
 - `LAYOUT`：横版、竖版各一份坐标。角色站位、镜头运动都依赖它，所以要写具体的数字。竖版要把 y>1400 留空给字幕
