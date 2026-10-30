@@ -1,14 +1,14 @@
 """第 5 步 成品：配音版完整视频 + 开头钩子大字 + 字幕 + 原创背景音乐和音效 + 提亮 + 响度标准化。
 
 用法：
-    python finalize.py --project ...                 # 横版 + 竖版（有哪个做哪个）
+    python finalize.py --project ...                 # 16:9 + 9:16（有哪个做哪个）
     python finalize.py --project ... --music 0.15    # 调背景音乐音量（默认 0.22）
     python finalize.py --project ... --remusic       # 重新合成背景音乐和音效（改了 CLIP/TEASER/MUSIC 后要加）
 
 背景音乐和音效都由本脚本用正弦波现场合成（原创旋律、无采样），不存在版权问题；
 story.py 里 MUSIC = "playful"（默认，轻快，适合信息流）或 "lullaby"（睡前主题用）。
 字幕字体 Fredoka 是 SIL Open Font License 开源字体，可商用。
-输出：成品/<TITLE>_16x9.mp4、_3x4.mp4、_9x16.mp4（Reels/Shorts，由 3:4 扩展）、配音/bgm.wav、配音/sfx.wav
+输出：成品/<TITLE>_16x9.mp4、_9x16.mp4（由 3:4 竖版工作画面扩展；3:4 本身不再输出成品）、配音/bgm.wav、配音/sfx.wav
 """
 import array
 import math
@@ -291,8 +291,7 @@ if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     tall = c.ROOT / "3x4" / "动画" / "配音版" / "完整版.mp4"
     jobs = [(c.ROOT / "动画" / "配音版" / "完整版.mp4", 1600, 900, "16x9"),
-            (tall, 1200, 1600, "3x4"),
-            (tall, 1200, 1600 + 2 * PAD916, "9x16")]     # Reels / Shorts 用，由 3:4 扩展
+            (tall, 1200, 1600 + 2 * PAD916, "9x16")]     # 抖音 / 视频号 / 小红书 / Reels / Shorts，由 3:4 扩展
     jobs = [j for j in jobs if j[0].exists()]
     if not jobs:
         raise SystemExit("没找到 动画/配音版/完整版.mp4，先运行 voiceover.py")
