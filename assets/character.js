@@ -4,6 +4,7 @@
  * v1.1（2026-10-29）：新增绘本用的手势动作 wave/cheer/flap/pat/call/nose，新增 filter:false 选项和 Lily.points()。
  * v1.2（2026-10-29）：新增摸五官动作 touchNose/touchEars/touchEyes/touchMouth/touchAll（正面用），眨眼和亲亲嘴型只在这些动作里出现。
  * v1.3（2026-10-30）：新增服装 hat:"witch"（紫色巫师帽）、左手提的 carry:"pumpkinBucket"（南瓜糖果桶）、敲门动作 knock。
+ * v1.4（2026-10-31）：新增好习惯动作 brushTeeth/washFace/scrubHands/combHair（正面用），牙刷、梳子、泡沫、水珠、肥皂泡由动作自带。
  * 这份（skill 的 assets/character.js）是唯一的主版本，绘本和 MV 都从这里取。
  *
  * 所有镜头都通过这里画角色，不要在镜头里重新画她，这样造型从头到尾一致。
@@ -21,6 +22,9 @@
  *                           //       （以下正面用）"touchNose" 点自己鼻子 | "touchEars" 双手摸耳朵 | "touchEyes" 双手指眼睛并眨眼
  *                           //       "touchMouth" 手放嘴边飞吻 | "touchAll" 依次摸鼻子→耳朵→眼睛→嘴巴→欢呼（t 走完一轮）
  *                           //       "knock" 右手在头旁边向画面右侧敲门（咚咚、停一下）
+ *                           //       （以下正面用，道具和泡泡自带）"brushTeeth" 右手拿牙刷左右刷牙，嘴边有泡沫
+ *                           //       "washFace" 闭眼双手捧在脸颊上画圈洗脸，手边溅出水珠 | "scrubHands" 双手在胸前搓，冒肥皂泡
+ *                           //       "combHair" 右手拿梳子从上往下梳右边的头发
  *     hat: null,            // 服装帽子："witch" 紫色巫师帽（正面/侧面/背面都有）
  *     carry: null,          // 左手提着的东西（和右手道具 prop 分开）："pumpkinBucket" 南瓜糖果桶
  *                           //   左手要垂下来才提得住：不要和 cheer/flap/jump/hug/touch* 一起用
@@ -58,7 +62,9 @@
   const VIEWS = ["front", "side", "back"];
   const EXPRESSIONS = ["happy", "shy", "sad", "surprised"];
   const ACTIONS = ["stand", "walk", "jump", "hug", "hold", "wave", "cheer", "flap", "pat", "call", "nose",
-                   "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll", "knock"];
+                   "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll", "knock",
+                   "brushTeeth", "washFace", "scrubHands", "combHair"];
+  const GROOM = ["brushTeeth", "washFace", "scrubHands", "combHair"];
   const HATS = ["witch"];
   const CARRY = ["pumpkinBucket"];
   const PROPS = ["balloon", "flower", "lollipop", "book", "teddy"];
@@ -177,6 +183,12 @@
     }
   }
 
+  /** 刷牙泡沫：嘴角两边几个小白泡。 */
+  function foam() {
+    return [[-17, 38, 5], [-22, 44, 3.5], [17, 41, 4.5], [22, 35, 3.5]]
+      .map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFFFFF" stroke="#8FD3FF" stroke-width="1.8"/>`).join("");
+  }
+
   function tear(x, y) {
     return `<path d="M${x},${y} q-6,9 0,12 q6,-3 0,-12z" fill="${C.tear}" ${stroke(2)}/>`;
   }
@@ -190,7 +202,7 @@
       `<path d="M-57,2 Q-52,-52 0,-58 Q52,-52 57,2 Q44,-18 24,-12 Q12,-28 0,-16 Q-12,-28 -24,-12 Q-44,-18 -57,2Z" fill="${C.hair}" ${stroke()}/>` +
       bow(-58, -12) + bow(58, -12) +
       eyes(expr, [-21, 21], 10, false, face.closed) + cheeks(expr, [-35, 35], 28) + mouth(expr, 0, 36, face.pucker) +
-      (expr === "sad" ? tear(-31, 22) : "");
+      (face.foam ? foam() : "") + (expr === "sad" ? tear(-31, 22) : "");
   }
 
   function headSide(expr) {
@@ -332,6 +344,8 @@
       p.targetR = { x: 66 + 14 * Math.min(tap, 1), y: -198 }; p.armsLast = true; p.fist = true;
     } else if (action.startsWith("touch")) {
       Object.assign(p, touch(action, t)); p.armsLast = true;
+    } else if (GROOM.includes(action)) {
+      Object.assign(p, groom(action, t)); p.armsLast = true;
     } else if (action === "hold") {
       if (prop === "balloon") p.armR = view === "side" ? [0.7, 0.3] : [0.55, 0.1];
       else if (prop === "book") p.armR = view === "side" ? [0.45, 1.0] : [0.35, -0.75];
@@ -374,6 +388,66 @@
       k = { L: lerp(prev.L, cur.L, m), R: lerp(prev.R, cur.R, m), closed: m === 1 && cur.closed, pucker: cur.pucker };
     } else k = touchKey(action, t);
     return { targetL: k.L, targetR: k.R, face: { closed: !!k.closed, pucker: !!k.pucker } };
+  }
+
+  // ---------------- 好习惯（身体坐标：嘴 0,-196；右边发团中心 70,-216；手臂最远只够到头的高度） ----------------
+  function groom(action, t) {
+    const a = 2 * Math.PI * t, ph = Math.sin(a), c = Math.cos(a);
+    switch (action) {
+      case "brushTeeth":  // 右手在嘴边左右来回刷，牙刷头盖在嘴上
+        return { targetL: REST_L, targetR: { x: 40 + 8 * ph, y: -192 }, item: "toothbrush", face: { foam: true } };
+      case "washFace":    // 双手贴着脸颊画小圈，闭着眼，手边溅水珠
+        return { targetL: { x: -40 + 5 * c, y: -206 + 5 * ph }, targetR: { x: 40 - 5 * c, y: -206 + 5 * ph }, face: { closed: true }, fx: "drops" };
+      case "scrubHands":  // 双手在胸前一上一下地搓，冒肥皂泡
+        return { targetL: { x: -9, y: -126 + 6 * ph }, targetR: { x: 9, y: -126 - 6 * ph }, fx: "bubbles" };
+      case "combHair": {  // 梳子从发团上面慢慢梳下来（70%），再快速回到上面
+        const k = ((t % 1) + 1) % 1, down = k < 0.7 ? ease(k / 0.7) : 1 - ease((k - 0.7) / 0.3);
+        return { targetL: REST_L, targetR: lerp({ x: 66, y: -224 }, { x: 86, y: -198 }, down), item: "comb" };
+      }
+    }
+  }
+
+  /** 右手握着的好习惯道具：先画道具再画手，看起来是握着。 */
+  function drawItem(item, hp) {
+    const x = hp.x, y = hp.y;
+    if (item === "toothbrush") {
+      let s = `<path d="M${f(x + 18)},${f(y + 2)} L${f(x - 26)},${f(y - 1)}" stroke="${C.line}" stroke-width="13" stroke-linecap="round"/>` +
+        `<path d="M${f(x + 18)},${f(y + 2)} L${f(x - 26)},${f(y - 1)}" stroke="#5BC0EB" stroke-width="6" stroke-linecap="round"/>` +
+        `<rect x="${f(x - 48)}" y="${f(y - 9)}" width="26" height="12" rx="5" fill="#5BC0EB" ${stroke(3)}/>` +
+        `<rect x="${f(x - 46)}" y="${f(y - 19)}" width="22" height="10" rx="2" fill="#FFFFFF" ${stroke(2.5)}/>`;
+      for (let i = 1; i < 4; i++) s += `<path d="M${f(x - 46 + i * 5.5)},${f(y - 18)} v8" stroke="#8FD3FF" stroke-width="2"/>`;
+      return s;
+    }
+    if (item === "comb") {
+      // 梳子斜靠在右边发团上（向左上倾斜），齿朝着头发
+      let s = `<g transform="translate(${f(x)},${f(y)}) rotate(-40)">` +
+        `<rect x="-8" y="-50" width="16" height="48" rx="7" fill="#FF8FB1" ${stroke(3.5)}/>`;
+      for (let i = 0; i < 6; i++) s += `<path d="M-8,${-44 + i * 6} h-9" ${stroke(3)}/>`;
+      return s + `<circle cx="0" cy="-40" r="3" fill="#FFFFFF" opacity="0.8"/></g>`;
+    }
+    return "";
+  }
+
+  /** 洗脸的水珠、搓手的肥皂泡：随 t 循环飘出去，画在最上层。 */
+  function groomFx(fx, t, hl, hr) {
+    let s = "";
+    if (fx === "drops") {
+      for (const [hp, dir] of [[hl, -1], [hr, 1]]) {
+        for (let i = 0; i < 3; i++) {
+          const u = (((t * 2 + i / 3) % 1) + 1) % 1, x = hp.x + dir * (14 + 26 * u), y = hp.y - 12 - 22 * u + 40 * u * u;
+          s += `<path d="M${f(x)},${f(y)} q-7,11 0,14 q7,-3 0,-14z" fill="${C.tear}" stroke="#2F86C0" stroke-width="2.5" opacity="${f(1 - u * 0.7)}"/>`;
+        }
+      }
+    }
+    if (fx === "bubbles") {
+      const xs = [-46, -26, 0, 26, 46], cy = (hl.y + hr.y) / 2;   // 泡泡只升到下巴下面，不挡脸
+      xs.forEach((dx, i) => {
+        const u = (((t + i / xs.length) % 1) + 1) % 1, r = 8 + 3 * (i % 2), x = dx + 4 * Math.sin(2 * Math.PI * (u + i / 5)), y = cy - 8 - 36 * u;
+        s += `<g opacity="${f(1 - u * u * 0.8)}"><circle cx="${f(x)}" cy="${f(y)}" r="${r}" fill="#FFFFFF" fill-opacity="0.9" stroke="#3FA7DB" stroke-width="2.8"/>` +
+          `<circle cx="${f(x - r * 0.35)}" cy="${f(y - r * 0.35)}" r="${f(r * 0.25)}" fill="#FFFFFF"/></g>`;
+      });
+    }
+    return s;
   }
 
   // ---------------- 服装：巫师帽（头部坐标，画在头发上面） ----------------
@@ -454,8 +528,8 @@
       arms += sleeve(-38, -160) + sleeve(38, -160);
     } else {
       arms += armPath(armL) + drawCarry(o.carry, armL.end) + hand(armL.end, !!o.carry);
-      arms += armPath(armR) + drawProp(heldProp, armR.end, view) + hand(armR.end, !!heldProp || !!P.fist);
-      arms += sleeve(-38, -160) + sleeve(38, -160);
+      arms += armPath(armR) + drawProp(heldProp, armR.end, view) + drawItem(P.item, armR.end) + hand(armR.end, !!heldProp || !!P.fist || !!P.item);
+      arms += sleeve(-38, -160) + sleeve(38, -160) + groomFx(P.fx, o.t || 0, armL.end, armR.end);
     }
     const head = `<g transform="translate(${HEAD.x},${HEAD.y})">${isBack ? headBack() : headFront(expression, P.face)}${o.hat ? witchHat(view) : ""}</g>`;
     const content = P.armsLast ? back + mid + head + arms : back + mid + arms + head;
