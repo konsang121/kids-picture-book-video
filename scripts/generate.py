@@ -70,6 +70,40 @@ def draw_scene(i, bg_svg):
     c.render(s["name"], c.crayonize(scene, c.W, c.H), c.W, c.H)
 
 
+def draw_scene_gpt(i, redo_sprites=False):
+    """GPT 引擎：配角姿势图（透明底）按坐标摆放，DeepSeek 只画小特效，Lily 在最上层。"""
+    import gpt
+    from concurrent.futures import ThreadPoolExecutor
+    s = c.SCENES[i - 1]
+    c.require_cast(s.get("cast", []), f"画第 {i} 个场景")
+    lily_svg, pts = c.lily_render(c.lily_opts(s))
+    with ThreadPoolExecutor(5) as pool:
+        list(pool.map(lambda n: gpt.draw_sprite(s, n, redo_sprites), s.get("cast", [])))
+    sprites, boxes = gpt.sprites_layer(s, pts, animated=False)
+    front, fboxes = gpt.sprites_layer(s, pts, animated=False, front=True)
+    boxes += fboxes
+    fx = c.ask(c.STYLE, gpt.fx_prompt(s, boxes, pts))
+    (c.SRC / f"_fx_{s['name']}.svg").write_text(fx, encoding="utf-8")       # 动画步骤从这里取特效层
+    bg_uri = gpt.data_uri(gpt.Image.open(c.SRC / "_bg.png").convert("RGB"), "JPEG")
+    c.render(s["name"], gpt.scene_svg(s, bg_uri, sprites, fx, lily_svg, front=front), c.W, c.H)
+
+
+def main_gpt(args, arg):
+    import gpt
+    if arg == "cast":
+        for n in args[1:] or [n for n in c.CAST if c.unapproved([n])]:
+            gpt.draw_cast(n)
+        print("设定图在", c.CAST_DIR, "；请用户审核，确认后运行 generate.py approve <名字>")
+        return
+    if arg in (None, "bg") and (arg == "bg" or not (c.SRC / "_bg.png").exists()):
+        c.SRC.mkdir(parents=True, exist_ok=True)
+        gpt.draw_background()
+    redo = arg == "sprites"            # generate.py sprites 3：重画第 3 个场景的配角姿势图
+    for i in range(1, len(c.SCENES) + 1):
+        if arg is None or (args[-1] == str(i) and arg in (str(i), "sprites")):
+            draw_scene_gpt(i, redo)
+
+
 def cached(f, draw, redo):
     if redo or not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
@@ -80,7 +114,7 @@ def cached(f, draw, redo):
 if __name__ == "__main__":
     args = c.positional()
     arg = args[0] if args else None
-    if arg == "cast":
+    if arg == "cast" and c.ENGINE != "gpt":
         names = args[1:] or [n for n in c.CAST if c.unapproved([n])]
         for n in names:
             draw_cast(n)
@@ -89,6 +123,9 @@ if __name__ == "__main__":
     if arg == "approve":
         c.set_approved(args[1:])
         print("已定稿：", ", ".join(args[1:]))
+        raise SystemExit
+    if c.ENGINE == "gpt":
+        main_gpt(args, arg)
         raise SystemExit
     bg = cached(c.SRC / "_bg_raw.svg", draw_background, arg in (None, "bg"))
     if arg == "bg":

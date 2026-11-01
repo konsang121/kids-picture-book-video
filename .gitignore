@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .deepseek_key_file
 *.skill
+.gpt_key_file

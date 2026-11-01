@@ -1,6 +1,6 @@
 ---
 name: kids-picture-book-video
-description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Time）：选主题、写 5 句英文文案、DeepSeek 画背景和配角、character.js 画主角 Lily（成品只输出横版 16:9 和竖版 9:16）、配角定稿审核、做镜头动画、英文童声配音、加字幕和原创背景音乐、写 YouTube/抖音/小红书标题说明。只要用户提到儿童英语绘本、磨耳朵视频、Lily、做新一期绘本、给某个主题（节日、动物、颜色、日常习惯等）做英语短视频，或者想重做其中某一步（重画某张图、改配音、调背景音乐、加字幕），就使用这个 skill，即使用户没有说出“绘本”两个字。
+description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Time）：选主题、写 5 句英文文案、GPT 生图画背景和配角（DeepSeek 画小特效）、character.js 画主角 Lily（成品只输出横版 16:9 和竖版 9:16）、配角定稿审核、做镜头动画、英文童声配音、加字幕和原创背景音乐、写 YouTube/抖音/小红书标题说明。只要用户提到儿童英语绘本、磨耳朵视频、Lily、做新一期绘本、给某个主题（节日、动物、颜色、日常习惯等）做英语短视频，或者想重做其中某一步（重画某张图、改配音、调背景音乐、加字幕），就使用这个 skill，即使用户没有说出“绘本”两个字。
 ---
 
 # 儿童英语绘本短视频
@@ -12,7 +12,7 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 
 整条流水线已经写成脚本，放在本 skill 的 `scripts/` 里。你的工作是：和用户定文案 → 写好本期的 `story.py` → 按顺序运行脚本 → **每一步都亲自检查结果**（读 PNG、抽帧看视频），发现问题就修正后重跑那一步 → 交付成品和发布文案。
 
-## 流程总览（v2.2）
+## 流程总览（v3.0：GPT 引擎）
 
 🔒 是审核关卡：必须等用户明确回复“定稿/可以/通过”后才能进入下一步，不能自己判断通过。
 
@@ -20,7 +20,7 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 |---|---|---|
 | 1 主题和文案 | 5 句英文 + 开头预告问句和大字钩子 | 🔒 用户确认文案 |
 | 2 写 story.py | 背景、横竖坐标、每幕 Lily 姿势、配角描述、镜头 | 🔒 有新动作/服装/道具时，扩展 character.js 并出 `审核/Lily新动作审核.png` |
-| 2.5 配角审核 | `generate.py cast` 出设定图（侧面 + 正面） | 🔒 每个配角单独定稿后 `approve`；重画即取消定稿 |
+| 2.5 配角审核 | `generate.py cast` 出设定图（侧面 + 正面；道具类如浴缸、床、窗户也要审核，写明“没有脸”） | 🔒 每个配角单独定稿后 `approve`；重画即取消定稿 |
 | 3 出图 | `generate.py`（16:9 和 `--3x4`），出 `出图总览.png` 自查 | |
 | 4 动画 | `animate.py`（两版），抽帧拼图检查 | |
 | 5 配音 | `voiceover.py`，检查每句能否说完 | |
@@ -36,6 +36,26 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 - Google Chrome：装在 `C:\Program Files\Google\Chrome\Application\chrome.exe`（Edge 的无头截图导不出图，所以用 Chrome）。
 - DeepSeek Key：依次读取环境变量 `DEEPSEEK_API_KEY`、环境变量 `DEEPSEEK_KEY_FILE`（key 文件路径），或 skill 根目录 `.deepseek_key_file` 里写的路径。key 文件里只要包含 `sk-...` 就行。这个文件不在 Git 仓库里；如果缺失，请用户告诉你 key 文件放在哪，再帮他建一个。不要在回复里显示 key。
 - 模型是 `deepseek-flash`（DeepSeek-V4.1-Flash）。**它不能直接生成图片**，只能输出文字，所以流水线是让它写 SVG 矢量图，再由脚本加蜡笔滤镜、用 Chrome 导出。用户要求“用 DeepSeek 生图”时，就是指这条路线。
+- Python 包 `requests`；GPT 生图 key：环境变量 `GPT_API_KEY`，或 skill 根目录 `.gpt_key_file` 里写的 key 文件路径（文件里含 `sk-...` 即可，不在 Git 仓库里）。接口 `https://zyx143.xyz/v1/images`（generations / edits），模型 `gpt-image-2.5-flare`，质量 `high`。**这个 key 同时只能有 2 个请求**，脚本遇到 429 会自动等待重试；不要同时跑两个以上出图进程。
+
+## 两种引擎（story.py 里的 `ENGINE`）
+
+**新一期默认 `ENGINE = "gpt"`**（用户 2026-10-31 定的，画面精致很多）。旧的几期没写 ENGINE，按 DeepSeek 引擎运行，不受影响。
+
+GPT 引擎（`scripts/gpt.py`）：
+- 背景：GPT 直接画成图片（`_bg.png`），横竖各一张
+- 配角设定图：GPT 画成 PNG（`cast/<名字>.png`），审核定稿规则不变
+- 每个场景里配角的姿势：用定稿设定图做参考图（images/edits），画成透明底单张图（`sprites/<场景>_<名字>.png`），和设定图长得一模一样；不同场景里姿势描述完全相同的配角只画一次、直接复用（浴缸、床、窗户）
+- 摆放：脚本按 `place_16x9` / `place_3x4` 的坐标把配角图贴上去（`x, y` 是脚底中心，`h` 是高度）；`{"anchor": "handR", "h": ..., "dx", "dy"}` 让配角最左边的点（伸过来的头或嘴）贴到 Lily 右手；`"front": True` 的配角画在 Lily 前面（浴缸、被子），挡住她下半身
+- 小特效（拟声线、星星、爱心）：DeepSeek 画 SVG，写在场景的 `fx_16x9` / `fx_3x4`；要写清楚颜色和大小，否则容易画成黑色或画得太大
+- 动画：配角整张图做预设动作，写在 `anim`：`bounce`、`stomp`、`nod`、`munch`、`stretch`、`fly`、`drift`、`roar`、`breathe`，可以叠加（如 `"fly drift"`）；特效层由 DeepSeek 加 CSS 动画；Lily 照旧逐帧由 character.js 画
+- 写法参考：`动物系列/02_恐龙/story.py`（配角互动）、`好习惯系列/02_洗澡/story.py`（前景浴缸）、`好习惯系列/03_晚安/story.py`（床、被子、窗户里放月亮）
+
+GPT 引擎的经验：
+- 道具（浴缸、窗户）不写“没有脸”，GPT 常常会给它画一张脸
+- 前景道具要足够大：浴缸太小时 Lily 像站在盆后面；放大到底部超出画面，看起来才像坐在里面
+- 被子这类前景只画“前面一条”，画成整张床的话床头会挡住 Lily
+- 竖版开头近景常会切到 Lily 的脸：第一个镜头关键帧中心放在 Lily 和配角之间
 
 ## 项目结构
 
@@ -92,7 +112,7 @@ description: 制作 3–6 岁儿童英语绘本短视频（频道 Lily Story Tim
 
 - `TITLE`：成品文件名前缀
 - `CLIP` / `TEASER` / `MUSIC`：节奏和开头钩子，见上一节。`TEASER["line"]` 要在 1.8 秒内说完，所以用问句，不要用一串拟声词
-- 每个场景的 `lily_16x9` / `lily_3x4`：Lily 的脚底位置 `x, y`、`action`、`expression`，可选 `view`、`facing`、`prop`、`scale`（默认横版 1.6、竖版 2.13）。可用动作：stand、walk、jump、hug、hold、wave、cheer、flap、pat（右手伸向画面右侧抚摸）、call（手放嘴边）、nose（推鼻头），以及正面用的摸五官 touchNose、touchEars、touchEyes（会眨眼）、touchMouth（飞吻）、touchAll（依次摸一遍再欢呼）、knock（敲门），以及正面用的好习惯动作 brushTeeth（拿牙刷刷牙，嘴边有泡沫）、washFace（闭眼捧水洗脸，溅水珠）、scrubHands（胸前搓手，冒肥皂泡）、combHair（拿梳子梳右边头发），道具和泡泡都由动作自带；服装 hat:"witch"，左手提 carry:"pumpkinBucket"；表情：happy、shy、sad、surprised；道具：balloon、flower、lollipop、book、teddy。本期需要的服装（雨衣、帽子）或动作没有时，先扩展 character.js
+- 每个场景的 `lily_16x9` / `lily_3x4`：Lily 的脚底位置 `x, y`、`action`、`expression`，可选 `view`、`facing`、`prop`、`scale`（默认横版 1.6、竖版 2.13）。可用动作：stand、walk、jump、hug、hold、wave、cheer、flap、pat（右手伸向画面右侧抚摸）、call（手放嘴边）、nose（推鼻头），洗澡和睡前用的正面动作 washHair（闭眼搓头顶泡沫）、popBubble（食指戳泡泡）、shh（闭眼嘘，头边飘 z），以及正面用的摸五官 touchNose、touchEars、touchEyes（会眨眼）、touchMouth（飞吻）、touchAll（依次摸一遍再欢呼）、knock（敲门），以及正面用的好习惯动作 brushTeeth（拿牙刷刷牙，嘴边有泡沫）、washFace（闭眼捧水洗脸，溅水珠）、scrubHands（胸前搓手，冒肥皂泡）、combHair（拿梳子梳右边头发），道具和泡泡都由动作自带；服装 hat:"witch"，左手提 carry:"pumpkinBucket"；表情：happy、shy、sad、surprised；道具：balloon、flower、lollipop、book、teddy。本期需要的服装（雨衣、帽子）或动作没有时，先扩展 character.js
 - `HIGHLIGHT`：字幕里要橙色高亮的词，必须和句子里的写法一字不差
 - `BACKGROUND`：本期场景。需要在镜头之间变化的部分（门开/门关、灯开/灯关）画成两个带 id 的分组，再在场景的 `hide` 里写要隐藏哪个
 - `LAYOUT`：横版、竖版各一份坐标。角色站位、镜头运动都依赖它，所以要写具体的数字。竖版要把 y>1400 留空给字幕

@@ -57,6 +57,7 @@ def load_story():
 
 STORY = load_story()
 SCENES = STORY.SCENES
+ENGINE = getattr(STORY, "ENGINE", "deepseek")    # "gpt"：背景、配角由 GPT 画成图片，见 gpt.py
 
 # 节奏：短视频观众 1~2 秒内决定去留，所以每段 4 秒，开头先放一段预告（最后一幕的精华 + 一句最好玩的拟声词）
 CLIP = float(getattr(STORY, "CLIP", 4.0))
@@ -137,11 +138,16 @@ def approved_cast():
     return json.loads(APPROVED.read_text(encoding="utf-8")) if APPROVED.exists() else {}
 
 
+def sheet_file(name):
+    """定稿看的设定图文件：DeepSeek 引擎是 SVG，GPT 引擎是 PNG。"""
+    return CAST_DIR / f"{name}.{'png' if ENGINE == 'gpt' else 'svg'}"
+
+
 def set_approved(names, ok=True):
     data = approved_cast()
     for n in names:
         if ok:
-            data[n] = {"svg_bytes": (CAST_DIR / f"{n}.svg").stat().st_size}
+            data[n] = {"svg_bytes": sheet_file(n).stat().st_size}
         else:
             data.pop(n, None)
     CAST_DIR.mkdir(exist_ok=True)
@@ -153,7 +159,7 @@ def unapproved(names):
     data = approved_cast()
     bad = []
     for n in names:
-        f = CAST_DIR / f"{n}.svg"
+        f = sheet_file(n)
         if n not in data or not f.exists() or data[n]["svg_bytes"] != f.stat().st_size:
             bad.append(n)
     return bad

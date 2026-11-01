@@ -194,10 +194,18 @@ LOOK = {"16x9": {"size": 60, "bottom": 46, "hook_size": 72, "hook_top": 28},
 
 def subtitle_html(line, w, h, fmt):
     portrait = fmt != "16x9"
+    # 竖版画面窄，在句子之间换行，避免单个词掉到第二行；很短的句子（Beep! Choo!）合在同一行，每行最多约 20 个字母
+    rows = [line]
+    if portrait:
+        rows = []
+        for part in re.split(r"(?<=[.!?]) ", line):
+            if rows and len(rows[-1]) + 1 + len(part) <= 20:
+                rows[-1] += " " + part
+            else:
+                rows.append(part)
     for word in HIGHLIGHT:
-        line = line.replace(word, f"<b>{word}</b>")
-    if portrait:  # 竖版画面窄，按句子换行，避免单个词掉到第二行
-        line = re.sub(r"([.!?]</b>|[.!?]) ", r"\1<br>", line)
+        rows = [r.replace(word, f"<b>{word}</b>") for r in rows]
+    line = "<br>".join(rows)
     size, bottom = LOOK[fmt]["size"], LOOK[fmt]["bottom"]
     return f"""<html><head>{FONT}<style>
   html, body {{ margin: 0; width: {w}px; height: {h}px; background: transparent; }}

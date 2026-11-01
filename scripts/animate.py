@@ -59,7 +59,8 @@ def chars_layer(name, bg):
 # Lily 每帧的动作参数：走路/跳跃/手势按周期推进 t；站立类动作轻轻上下起伏
 LILY_PERIOD = {"walk": 0.8, "jump": 1.0, "wave": 0.9, "cheer": 1.0, "flap": 0.6, "pat": 1.1, "call": 1.4, "nose": 1.0,
                "touchNose": 0.7, "touchEars": 0.8, "touchEyes": 2.0, "touchMouth": 1.6, "touchAll": 4.0, "knock": 1.3,
-               "brushTeeth": 0.5, "washFace": 1.0, "scrubHands": 0.6, "combHair": 1.4}
+               "brushTeeth": 0.5, "washFace": 1.0, "scrubHands": 0.6, "combHair": 1.4,
+               "washHair": 0.7, "popBubble": 1.3, "shh": 2.0}
 LILY_JS = """
 window.__lilyBase = %s;
 window.__lily = function (sec) {
@@ -111,6 +112,24 @@ def page_html(s, bg, anim_svg, camera=None, seconds=None):
     return f'<html><body style="margin:0;overflow:hidden;background:#FFF8EC">{svg}<script>{script}</script></body></html>'
 
 
+def gpt_parts(s):
+    """GPT 引擎：配角图片层（预设动作）+ 特效层（DeepSeek 加 CSS 动画）。"""
+    import gpt
+    _, pts = c.lily_render(c.lily_opts(s))
+    sprites, _ = gpt.sprites_layer(s, pts, animated=True)
+    front, _ = gpt.sprites_layer(s, pts, animated=True, front=True)
+    fx = animate_chars(s, c.strip_svg((c.SRC / f"_fx_{s['name']}.svg").read_text(encoding="utf-8")))
+    return sprites, fx, front
+
+
+def page_html_gpt(s, bg_uri, parts, camera=None, seconds=None):
+    import gpt
+    sprites, fx, front = parts
+    svg = gpt.scene_svg(s, bg_uri, sprites, fx, "", camera_css(camera or s["camera_" + c.FMT], seconds or c.clip_len(s)), front)
+    script = c.CHARACTER_JS.read_text(encoding="utf-8") + LILY_JS % (json.dumps(c.lily_opts(s)), json.dumps(LILY_PERIOD))
+    return f'<html><body style="margin:0;overflow:hidden;background:#FFF8EC">{svg}<script>{script}</script></body></html>'
+
+
 def render_video(page, name, html, seconds):
     page.set_content(html)
     page.wait_for_timeout(300)
@@ -133,6 +152,25 @@ if __name__ == "__main__":
     only = [a for a in c.positional() if a.isdigit()]   # 0 = 只做预告
     scenes = [s for i, s in enumerate(c.SCENES, 1) if not only or str(i) in only]
     OUT.mkdir(parents=True, exist_ok=True)
+    if c.ENGINE == "gpt":
+        import gpt
+        bg_uri = gpt.data_uri(gpt.Image.open(c.SRC / "_bg.png").convert("RGB"), "JPEG")
+        todo = scenes + ([c.SCENES[-1]] if c.TEASER and (not only or "0" in only) and c.SCENES[-1] not in scenes else [])
+        with ThreadPoolExecutor(5) as pool:
+            parts = dict(zip([t["name"] for t in todo], pool.map(gpt_parts, todo)))
+        with sync_playwright() as p:
+            browser = p.chromium.launch(channel="chrome")
+            page = browser.new_page(viewport={"width": c.W, "height": c.H})
+            for s in scenes:
+                render_video(page, s["name"], page_html_gpt(s, bg_uri, parts[s["name"]]), c.clip_len(s))
+            if c.TEASER and (not only or "0" in only):
+                last = c.SCENES[-1]
+                _, cx, cy, z = last["camera_" + c.FMT][0]
+                cam = [(0, cx, cy, min(max(z, 1.2), 1.25)), (70, c.W / 2, c.H / 2, 1.0), (100, c.W / 2, c.H / 2, 1.0)]
+                render_video(page, "00_teaser", page_html_gpt(last, bg_uri, parts[last["name"]], cam, c.TEASER_SECONDS),
+                             c.TEASER_SECONDS)
+            browser.close()
+        raise SystemExit
     bg = bg_inner()
     with ThreadPoolExecutor(5) as pool:
         anims = list(pool.map(lambda s: animate_chars(s, chars_layer(s["name"], bg)), scenes))

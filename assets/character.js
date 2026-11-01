@@ -63,8 +63,8 @@
   const EXPRESSIONS = ["happy", "shy", "sad", "surprised"];
   const ACTIONS = ["stand", "walk", "jump", "hug", "hold", "wave", "cheer", "flap", "pat", "call", "nose",
                    "touchNose", "touchEars", "touchEyes", "touchMouth", "touchAll", "knock",
-                   "brushTeeth", "washFace", "scrubHands", "combHair"];
-  const GROOM = ["brushTeeth", "washFace", "scrubHands", "combHair"];
+                   "brushTeeth", "washFace", "scrubHands", "combHair", "washHair", "popBubble", "shh"];
+  const GROOM = ["brushTeeth", "washFace", "scrubHands", "combHair", "washHair", "popBubble", "shh"];
   const HATS = ["witch"];
   const CARRY = ["pumpkinBucket"];
   const PROPS = ["balloon", "flower", "lollipop", "book", "teddy"];
@@ -404,6 +404,14 @@
         const k = ((t % 1) + 1) % 1, down = k < 0.7 ? ease(k / 0.7) : 1 - ease((k - 0.7) / 0.3);
         return { targetL: REST_L, targetR: lerp({ x: 66, y: -224 }, { x: 86, y: -198 }, down), item: "comb" };
       }
+      case "washHair":    // 双手在头顶两侧一上一下地搓，闭着眼，头发上一团泡沫
+        return { targetL: { x: -68 + 5 * c, y: -252 + 5 * ph }, targetR: { x: 68 - 5 * c, y: -252 - 5 * ph }, face: { closed: true }, fx: "suds" };
+      case "popBubble": { // 右手食指往右上方戳，指尖的泡泡变大后“啪”地破掉
+        const k = ((t % 1) + 1) % 1, reach = k < 0.55 ? ease(k / 0.55) : 1 - ease((k - 0.55) / 0.45);
+        return { targetL: REST_L, targetR: lerp({ x: 52, y: -186 }, { x: 80, y: -262 }, reach), fx: "pop" };
+      }
+      case "shh":         // 食指竖在嘴前，闭着眼，头边飘出 z
+        return { targetL: REST_L, targetR: { x: 4, y: -192 + 2 * ph }, face: { closed: true }, fx: "zzz" };
     }
   }
 
@@ -446,6 +454,37 @@
         s += `<g opacity="${f(1 - u * u * 0.8)}"><circle cx="${f(x)}" cy="${f(y)}" r="${r}" fill="#FFFFFF" fill-opacity="0.9" stroke="#3FA7DB" stroke-width="2.8"/>` +
           `<circle cx="${f(x - r * 0.35)}" cy="${f(y - r * 0.35)}" r="${f(r * 0.25)}" fill="#FFFFFF"/></g>`;
       });
+    }
+    if (fx === "suds") {
+      // 头顶的泡沫团（头中心 0,-232，头顶约 -292），外加几个往上飘的小泡泡
+      [[-40, -286, 16], [-18, -298, 19], [8, -300, 18], [32, -292, 17], [52, -278, 13], [-56, -272, 12]].forEach(([x, y, r]) => {
+        s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFFFFF" stroke="#8FD3FF" stroke-width="2.5"/>`;
+      });
+      [-30, 10, 44].forEach((dx, i) => {
+        const u = (((t + i / 3) % 1) + 1) % 1, y = -318 - 40 * u;
+        s += `<circle cx="${f(dx + 6 * Math.sin(2 * Math.PI * (u + i / 3)))}" cy="${f(y)}" r="${7 + (i % 2) * 2}" fill="#FFFFFF" fill-opacity="0.85" stroke="#3FA7DB" stroke-width="2.4" opacity="${f(1 - u * 0.8)}"/>`;
+      });
+    }
+    if (fx === "pop") {
+      const k = ((t % 1) + 1) % 1, x = hr.x + 28, y = hr.y - 20;
+      if (k < 0.55) {            // 泡泡慢慢变大
+        const r = 10 + 12 * ease(k / 0.55);
+        s += `<circle cx="${f(x)}" cy="${f(y - r * 0.4)}" r="${f(r)}" fill="#FFFFFF" fill-opacity="0.6" stroke="#3FA7DB" stroke-width="2.8"/>` +
+          `<circle cx="${f(x - r * 0.35)}" cy="${f(y - r * 0.75)}" r="${f(r * 0.22)}" fill="#FFFFFF"/>`;
+      } else if (k < 0.8) {      // 啪：一圈短线和小水点向外散开
+        const u = (k - 0.55) / 0.25;
+        for (let i = 0; i < 8; i++) {
+          const a = (Math.PI * 2 * i) / 8, r1 = 14 + 16 * u, r2 = r1 + 10;
+          s += `<path d="M${f(x + r1 * Math.cos(a))},${f(y - 8 + r1 * Math.sin(a))} L${f(x + r2 * Math.cos(a))},${f(y - 8 + r2 * Math.sin(a))}" stroke="#3FA7DB" stroke-width="3" stroke-linecap="round" opacity="${f(1 - u)}"/>`;
+        }
+      }
+    }
+    if (fx === "zzz") {
+      // 头右上方飘起三个 z（用线画，不是文字）
+      for (let i = 0; i < 3; i++) {
+        const u = (((t * 0.5 + i / 3) % 1) + 1) % 1, z = 9 + 5 * i, x = 72 + 18 * i + 10 * u, y = -280 - 26 * i - 20 * u;
+        s += `<path d="M${f(x - z)},${f(y - z)} h${f(2 * z)} l${f(-2 * z)},${f(2 * z)} h${f(2 * z)}" fill="none" stroke="#7C83D6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="${f(0.35 + 0.65 * (1 - u))}"/>`;
+      }
     }
     return s;
   }
